@@ -846,6 +846,21 @@ static void *Thread( void *obj )
     Q_INIT_RESOURCE( util_assets );
     Q_INIT_RESOURCE( widgets_assets );
 
+#ifndef QT_USE_QMLCACHEGEN
+    //the qml modules' res.qrc resources (compiled separately for old rcc)
+    Q_INIT_RESOURCE( dialogs_res );
+    Q_INIT_RESOURCE( maininterface_res );
+    Q_INIT_RESOURCE( menus_res );
+    Q_INIT_RESOURCE( medialibrary_res );
+    Q_INIT_RESOURCE( network_res );
+    Q_INIT_RESOURCE( player_res );
+    Q_INIT_RESOURCE( playercontrols_res );
+    Q_INIT_RESOURCE( playlist_res );
+    Q_INIT_RESOURCE( style_res );
+    Q_INIT_RESOURCE( util_res );
+    Q_INIT_RESOURCE( widgets_res );
+#endif
+
 #ifdef QT_USE_QMLCACHEGEN
     Q_INIT_RESOURCE( dialogs_cachegen );
     Q_INIT_RESOURCE( maininterface_cachegen );

@@ -1684,12 +1684,19 @@ else
 
 # See comment above QML_MODULE_RES_QRC for why this is a named variable.
 QML_MODULE_ASSETS = $(libqt_plugin_la_QML_MODULES:=/qmlassets.cpp)
+QML_MODULE_RES = $(libqt_plugin_la_QML_MODULES:=/qmlres.cpp)
 
+# Older rcc (e.g. Qt 6.2) silently ignores additional input files, so emit
+# one resource object per .qrc instead of passing both to a single call.
 $(QML_MODULE_ASSETS):
 	$(AM_V_GEN)$(RCC) $(RCC_EXTRA_PARAMS) --name $(@D)_assets \
-	-o $@ $(builddir)/$(@D)/qmldir.qrc $(builddir)/$(@D)/res.qrc
+	-o $@ $(builddir)/$(@D)/qmldir.qrc
 
-nodist_libqt_plugin_la_SOURCES += $(QML_MODULE_ASSETS)
+$(QML_MODULE_RES):
+	$(AM_V_GEN)$(RCC) $(RCC_EXTRA_PARAMS) --name $(@D)_res \
+	-o $@ $(builddir)/$(@D)/res.qrc
+
+nodist_libqt_plugin_la_SOURCES += $(QML_MODULE_ASSETS) $(QML_MODULE_RES)
 if ENABLE_QT
 BUILT_SOURCES += $(QML_MODULE_RES_QRC) $(QML_MODULE_QMLDIR)
 endif
