@@ -331,6 +331,35 @@ Item {
         }
 
         Loader {
+            id: toolsPanelLoader
+
+            anchors {
+                top: parent.top
+                right: parent.right
+                bottom: parent.bottom
+            }
+
+            focus: false
+            active: MainCtx.toolsPanelVisible
+            width: active ? VLCStyle.dp(300, VLCStyle.scale) : 0
+            clip: true
+            visible: width > 0
+            z: 5
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: VLCStyle.duration_short
+                    easing.type: Easing.InOutSine
+                }
+            }
+
+            sourceComponent: ToolsPanel {
+                height: toolsPanelLoader.height
+                onRequestClose: MainCtx.toolsPanelVisible = false
+            }
+        }
+
+        Loader {
             asynchronous: true
             source: "qrc:///qt/qml/VLC/Menus/GlobalShortcuts.qml"
         }

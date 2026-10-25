@@ -230,7 +230,7 @@ FocusScope {
         id: menuTopbar
         z: 6
 
-        visible: MainCtx.hasToolbarMenu
+        visible: true
         enabled: visible
 
         anchors {
@@ -563,9 +563,9 @@ FocusScope {
 
             width: VLCStyle.isScreenReallySmall ? 0.0 : collapsedWidth
 
-            property real collapsedWidth: VLCStyle.icon_normal + VLCStyle.margin_small + VLCStyle.margin_xsmall + VLCStyle.applicationHorizontalMargin
+            property real collapsedWidth: VLCStyle.icon_normal + VLCStyle.margin_small * 2
 
-            delegateShowText: (state === "expanded")
+            delegateShowText: sidebar.state === "expanded"
 
             visible: (width > 0.0)
 
@@ -578,7 +578,7 @@ FocusScope {
             rightPadding: sidebarResizeHandle.visible ? sidebarResizeHandle.visualBorder.width : 0.0
             bottomPadding: VLCStyle.applicationVerticalMargin + VLCStyle.margin_small
 
-            safeAreaLeftMargin: VLCStyle.applicationHorizontalMargin
+            safeAreaLeftMargin: VLCStyle.margin_xsmall
 
             useAcrylic: (VLCStyle.isScreenSmall ? (sidebar.state === "") : true) // See `694d51a7` for the reasoning.
 

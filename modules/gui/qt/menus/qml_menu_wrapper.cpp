@@ -27,6 +27,10 @@
 #include "playlist/playlist_controller.hpp"
 #include "playlist/playlist_model.hpp"
 #include "dialogs/dialogs_provider.hpp"
+#include "dialogs/toolbar/controlbar_profile_model.hpp"
+#include "dialogs/toolbar/controlbar_profile.hpp"
+#include "custom_menus.hpp"
+#include "medialibrary/mlrecentmediamodel.hpp"
 #include "util/colorizedsvgicon.hpp"
 #include "maininterface/navigationmodel.hpp"
 
@@ -377,6 +381,15 @@ void QmlMenuBar::popupMenuCommon( QQuickItem* button, std::function<void(QMenu*)
         return;
 
     m_menu = std::make_unique<QmlMenuBarMenu>(this);
+    m_menu->setStyleSheet(QStringLiteral(
+        "QMenu { background-color: #1B1B1B; border: 1px solid #2B2927; border-radius: 10px; padding: 6px 0px; }"
+        "QMenu::item { color: #ECECEC; background-color: transparent; padding: 7px 30px 7px 16px; border-radius: 6px; margin: 0px 6px; }"
+        "QMenu::item:selected { background-color: rgba(255,255,255,0.09); color: #FFFFFF; }"
+        "QMenu::item:disabled { color: #6F6F6F; }"
+        "QMenu::separator { height: 1px; background: #2B2927; margin: 4px 12px; }"
+        "QMenu::icon { padding-left: 4px; }"
+        "QMenu::indicator { width: 16px; height: 16px; }"
+    ));
     createMenuFunc(m_menu.get());
     m_button = button;
     m_openMenuOnHover = false;
@@ -493,6 +506,123 @@ void QmlMenuBar::popupExtraActionsMenu( QQuickItem* button, const QList<MenuEntr
             QMenu* subMenu = menu->addMenu(menuEntryTitle(action));
             setupMenuEntry(subMenu, action);
         }
+    });
+}
+
+void QmlMenuBar::popupAppMenu( QQuickItem* button )
+{
+    popupMenuCommon(button, [this](QMenu* menu) {
+        qt_intf_t* p_intf = m_ctx->getIntf();
+
+        auto addEntry = [menu]( const QString& text,
+                                const char* icon,
+                                const auto member,
+                                const char* shortcut = nullptr ) -> QAction*
+        {
+            QAction* action;
+#ifndef __APPLE__
+            if( icon && !EMPTY_STR( icon ) )
+                action = menu->addAction(
+                    ColorizedSvgIcon::colorizedIconForWidget( icon, menu ), text, THEDP, member );
+            else
+#endif
+                action = menu->addAction( text, THEDP, member );
+
+            if( shortcut && !EMPTY_STR( shortcut ) )
+                action->setShortcut( qfut( shortcut ) );
+            return action;
+        };
+
+        addEntry( qtr( "Open File" ), ":/menu/file.svg",
+                  &DialogsProvider::openFileDialog, "Ctrl+O" );
+        addEntry( qtr( "Open Files" ), ":/menu/file.svg",
+                  &DialogsProvider::openFileDialog );
+        addEntry( qtr( "Open Folder" ), ":/menu/folder.svg",
+                  &DialogsProvider::PLOpenDir );
+        addEntry( qtr( "Open Disc" ), ":/menu/disc.svg",
+                  &DialogsProvider::openDiscDialog, "Ctrl+D" );
+        addEntry( qtr( "Open Capture Device" ), ":/menu/capture-card.svg",
+                  &DialogsProvider::openCaptureDialog, "Ctrl+C" );
+        addEntry( qtr( "Open Network Stream" ), ":/menu/network.svg",
+                  &DialogsProvider::openNetDialog, "Ctrl+N" );
+        addEntry( qtr( "Open Location from clipboard" ), nullptr,
+                  &DialogsProvider::openUrlDialog, "Ctrl+V" );
+
+        auto mi = p_intf->p_mi;
+        if( mi && var_InheritBool( p_intf, "save-recentplay" ) && mi->hasMediaLibrary() )
+        {
+            MLRecentMediaModel* recentModel = new MLRecentMediaModel( nullptr );
+            recentModel->setMl( mi->getMediaLibrary() );
+            recentModel->setLimit( 10 );
+            QMenu* recentsMenu = new RecentMenu( recentModel, mi->getMediaLibrary(), menu );
+            recentsMenu->setTitle( qtr( "Open Recent" ) );
+            recentModel->setParent( recentsMenu );
+            menu->addMenu( recentsMenu );
+        }
+
+        menu->addSeparator();
+
+        addEntry( qtr( "Save Playlist to File" ), nullptr,
+                  &DialogsProvider::savePlayingToPlaylist, "Ctrl+Y" );
+        addEntry( qtr( "Convert / Save" ), nullptr,
+                  &DialogsProvider::openAndTranscodingDialogs, "Ctrl+R" );
+        addEntry( qtr( "Stream" ), ":/menu/stream.svg",
+                  &DialogsProvider::openAndStreamingDialogs, "Ctrl+S" );
+
+        QAction* quitAtEnd = menu->addAction( qtr( "Quit at the end of play queue" ),
+            [playlist = THEMPL]( bool checked ) {
+                using namespace vlc::playlist;
+                playlist->setMediaStopAction( checked
+                    ? PlaylistController::MEDIA_STOPPED_EXIT
+                    : PlaylistController::MEDIA_STOPPED_CONTINUE );
+            } );
+        quitAtEnd->setCheckable( true );
+        quitAtEnd->setChecked( THEMPL->getMediaStopAction()
+                               == vlc::playlist::PlaylistController::MEDIA_STOPPED_EXIT );
+
+        menu->addSeparator();
+
+        ControlbarProfileModel* profileModel = m_ctx->controlbarProfileModel();
+        if( profileModel )
+        {
+            QMenu* profileMenu = menu->addMenu( qtr( "Profile" ) );
+            const int rowCount = profileModel->rowCount();
+            for( int i = 0; i < rowCount; ++i )
+            {
+                ControlbarProfile* profile = profileModel->getProfile( i );
+                if( !profile )
+                    continue;
+
+                QAction* action = profileMenu->addAction( profile->name(),
+                    profileModel, [profileModel, i]() {
+                        profileModel->setSelectedProfile( i );
+                        profileModel->save();
+                    } );
+                action->setCheckable( true );
+                action->setChecked( i == profileModel->selectedProfile() );
+            }
+            profileMenu->addSeparator();
+            profileMenu->addAction( qtr( "New Profile" ), profileModel,
+                [profileModel]() {
+                    profileModel->cloneSelectedProfile( qtr( "New Profile" ) );
+                    profileModel->save();
+                } );
+        }
+
+        addEntry( qtr( "Keyboard Shortcuts" ), nullptr,
+                  &DialogsProvider::prefsDialog );
+        addEntry( qtr( "Customize Player" ), ":/menu/preferences.svg",
+                  []() { emit THEDP->showToolbarEditorDialog(); } );
+        addEntry( qtr( "Plugins and Extensions" ), nullptr,
+                  &DialogsProvider::pluginDialog );
+        addEntry( qtr( "Settings" ), ":/menu/preferences.svg",
+                  &DialogsProvider::prefsDialog, "Ctrl+P" );
+        addEntry( qtr( "About VLC" ), ":/menu/info.svg",
+                  &DialogsProvider::aboutDialog, "Shift+F1" );
+
+        menu->addSeparator();
+
+        addEntry( qtr( "Quit" ), ":/menu/exit.svg", &DialogsProvider::quit, "Ctrl+Q" );
     });
 }
 

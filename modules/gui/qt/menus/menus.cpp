@@ -178,7 +178,7 @@ void VLCMenuBar::FileMenu(qt_intf_t *p_intf, QMenu *menu)
 
     //use a lambda here as the Triggrered signal is emiting and it will pass false (checked) as a first argument
     addDPStaticEntry( menu, qtr( "Open &File..." ),
-        ":/menu/file.svg", []() { THEDP->simpleOpenDialog(); } , "Ctrl+O" );
+        ":/menu/file.svg", &DialogsProvider::openFileDialog , "Ctrl+O" );
     addDPStaticEntry( menu, qtr( "&Open Multiple Files..." ),
         ":/menu/file.svg", &DialogsProvider::openFileDialog, "Ctrl+Shift+O" );
     addDPStaticEntry( menu, qfut( I_OP_OPDIR ),

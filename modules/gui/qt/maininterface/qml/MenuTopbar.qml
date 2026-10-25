@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
+ * Foundation, Inc., 51 Franklin Street, Boston MA 02110-1301, USA.
  *****************************************************************************/
 
 import QtQuick
@@ -28,6 +28,7 @@ import VLC.Style
 import VLC.Playlist
 import VLC.Widgets as Widgets
 import VLC.Menus as Menus
+import VLC.Player
 import VLC.Util
 
 T.ToolBar {
@@ -59,10 +60,9 @@ T.ToolBar {
         alternativeColor: theme.bg.primary
     }
 
-    contentItem:  Item {
-        implicitHeight: menubar.implicitHeight
-            + VLCStyle.applicationVerticalMargin
-            + VLCStyle.margin_xxsmall
+    contentItem: Item {
+        implicitHeight: VLCStyle.globalToolbar_height
+            + VLCStyle.margin_xxxsmall
 
         //drag and dbl click the titlebar in CSD mode
         Loader {
@@ -73,24 +73,52 @@ T.ToolBar {
             }
         }
 
-        Menus.Menubar {
+        Menus.QmlMenuBar {
             id: menubar
+
+            ctx: MainCtx
+            menubar: appMenuButton
+        }
+
+        Widgets.BannerCone {
+            id: cone
 
             anchors {
                 left: parent.left
                 leftMargin: VLCStyle.applicationHorizontalMargin
-
-                right: parent.right
-                rightMargin: root._showCSD && !(csdButtons.height < VLCStyle.applicationVerticalMargin) ? csdButtons.width
-                            : VLCStyle.applicationHorizontalMargin
-
-                top: parent.top
-                topMargin: VLCStyle.applicationVerticalMargin
+                verticalCenter: parent.verticalCenter
             }
-            visible: MainCtx.hasToolbarMenu
-            enabled: visible
 
-            Navigation.parentItem: root
+            height: VLCStyle.icon_normal
+            width: VLCStyle.icon_normal
+
+            color: theme.accent
+        }
+
+        Widgets.IconToolButton {
+            id: appMenuButton
+
+            anchors {
+                left: cone.right
+                leftMargin: VLCStyle.margin_xsmall
+                verticalCenter: parent.verticalCenter
+            }
+
+            text: VLCIcons.ellipsis
+            description: qsTr("Application menu")
+            font.pixelSize: VLCStyle.icon_normal
+
+            onClicked: menubar.popupAppMenu(appMenuButton)
+        }
+
+        T.Label {
+            anchors.centerIn: parent
+
+            text: (Player.title && Player.title.length > 0) ? Player.title : "VLC Media Player"
+            color: theme.fg.secondary
+            font.pixelSize: VLCStyle.fontSize_normal
+
+            visible: !root._showCSD || (csdButtons.height < VLCStyle.applicationVerticalMargin)
         }
 
         Loader {

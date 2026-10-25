@@ -220,6 +220,7 @@ public slots:
     void popupViewMenu( QQuickItem* button );
     void popupHelpMenu( QQuickItem* button );
     void popupExtraActionsMenu( QQuickItem* button, const QList<MenuEntry>& extraActions );
+    void popupAppMenu( QQuickItem* button );
 
 private slots:
     void onMenuClosed();

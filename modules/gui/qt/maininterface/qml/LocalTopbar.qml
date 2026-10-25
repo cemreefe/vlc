@@ -42,9 +42,7 @@ T.ToolBar {
     // Not strictly necessary to set
     property Item plListView
 
-    property bool _showCSD: MainCtx.clientSideDecoration
-        && !(MainCtx.intfMainWindow.visibility === Window.FullScreen)
-        && !MainCtx.hasToolbarMenu
+    property bool _showCSD: false
 
     //whether the navigation pannel is actually visible or not
     property alias navigationVisible: navigationVisibilty.checked
@@ -149,6 +147,10 @@ T.ToolBar {
                 Widgets.BannerCone {
                     id: logo
 
+                    // cone lives in the menu topbar in the redesign
+                    visible: false
+                    width: 0
+
                     sourceSize.width: VLCStyle.bannerButton_height
                     sourceSize.height: VLCStyle.bannerButton_height
                     color: theme.accent
@@ -198,7 +200,7 @@ T.ToolBar {
                 Widgets.IconToolButton {
                     id: menuBtn
 
-                    visible: !MainCtx.hasToolbarMenu
+                    visible: false
                     font.pixelSize: VLCStyle.icon_banner
                     text: VLCIcons.more
                     description: qsTr("Menu")

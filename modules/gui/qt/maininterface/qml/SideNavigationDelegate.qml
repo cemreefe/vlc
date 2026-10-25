@@ -99,7 +99,7 @@ T.ItemDelegate {
 
     background: Widgets.AnimatedBackground {
         enabled: theme.initialized
-        color: theme.bg.primary
+        color: control.checked ? "#2B2927" : (control.hovered ? theme.bg.primary : "transparent")
         border.color: visualFocus ? theme.visualFocus : "transparent"
 
         radius: control.radius
@@ -111,7 +111,7 @@ T.ItemDelegate {
                 verticalCenter: parent.verticalCenter
             }
             implicitHeight: parent.height / 2
-            visible: control.checked
+            visible: control.checked && !control.showText
 
             radius: control.radius / 2
         }
@@ -136,7 +136,7 @@ T.ItemDelegate {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
 
-                color: (control.highlighted || control.checked) ? theme.accent : theme.fg.primary
+                color: (control.highlighted || control.checked) ? theme.accent : theme.fg.secondary
 
                 font.pixelSize: VLCStyle.icon_banner
             }
@@ -152,15 +152,15 @@ T.ItemDelegate {
 
             verticalAlignment: Text.AlignVCenter
 
-            color: control.checked ? theme.fg.secondary : theme.fg.primary
+            color: control.checked ? theme.accent : theme.fg.primary
 
             elide: Text.ElideRight
 
             visible: control.showText
 
-            font.pixelSize: VLCStyle.fontSize_normal
+            font.pixelSize: VLCStyle.dp(13, VLCStyle.scale)
 
-            font.weight: control.checked ? Font.DemiBold : Font.Normal
+            font.weight: Font.Normal
 
             //button text is already exposed
             Accessible.ignored: true
