@@ -302,6 +302,17 @@ void DialogsProvider::prefsDialog()
     }
 }
 
+void DialogsProvider::prefsHotkeysDialog()
+{
+    if (Q_LIKELY(!m_prefsDialog))
+    {
+        m_prefsDialog = new PrefsDialog(nullptr, p_intf);
+        m_prefsDialog->setAttribute(Qt::WA_DeleteOnClose);
+        m_prefsDialog->installEventFilter(this);
+    }
+    m_prefsDialog->showHotkeysPage();
+}
+
 void DialogsProvider::firstRunDialog()
 {
     ensureDialog(m_firstRunDialog);

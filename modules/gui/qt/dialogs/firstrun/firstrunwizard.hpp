@@ -32,10 +32,7 @@ class FirstRunWizard : public QWizard
 
 public:
     explicit FirstRunWizard ( qt_intf_t*, QWidget* parent = nullptr );
-    enum { WELCOME_PAGE, FOLDER_PAGE, COLOR_SCHEME_PAGE, LAYOUT_PAGE };
-    enum { MODERN, CLASSIC };
-
-    void addDefaults();
+    enum { WELCOME_PAGE, FOLDER_PAGE, COLOR_SCHEME_PAGE, SHORTCUTS_PAGE };
 
     int nextId() const;
     void initializePage( int id );
@@ -48,7 +45,7 @@ private:
     MLFoldersModel *mlFoldersModel = nullptr;
 
     qt_intf_t* p_intf;
-    bool mlDefaults = false;
+    QString selectedAccent = QStringLiteral("#E87808");
 
     QButtonGroup* colorSchemeGroup = nullptr;
     QButtonGroup* colorSchemeImages = nullptr;
@@ -57,10 +54,9 @@ private:
 private slots:
     void finish();
     void MLaddNewFolder();
+    void MLaddVideosFolder();
     void updateColorLabel( QAbstractButton* );
-    void updateLayoutLabel (QAbstractButton* );
     void imageColorSchemeClick ( QAbstractButton* );
-    void imageLayoutClick( QAbstractButton* );
 };
 
 #endif // VLC_FIRSTRUNWIZARD_H
