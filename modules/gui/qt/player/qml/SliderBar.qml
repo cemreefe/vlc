@@ -573,10 +573,10 @@ T.ProgressBar {
         x: (control.visualPosition * control.availableWidth) - width / 2
         y: (control.barHeight - height) / 2
 
-        implicitWidth: sliderHandle._size
-        implicitHeight: sliderHandle._size
-        radius: VLCStyle.margin_small
-        color: theme.fg.primary
+        implicitWidth: VLCStyle.dp(4, VLCStyle.scale)
+        implicitHeight: control.barHeight + VLCStyle.dp(6, VLCStyle.scale)
+        radius: VLCStyle.dp(2, VLCStyle.scale)
+        color: theme.accent
 
         // We use dynamic mutability group because time interpolation
         // may induce rapid change:

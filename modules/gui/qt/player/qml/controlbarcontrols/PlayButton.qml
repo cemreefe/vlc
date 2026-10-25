@@ -217,10 +217,9 @@ T.Control {
                 return VLCIcons.play_filled
         }
 
-        color: cursorInside ? theme.accent
-                            : "black"  //foreground is always black
+        color: "white"
 
-        font.pixelSize: Math.round(parent.height / 1.7)
+        font.pixelSize: Math.round(parent.height / 1.9)
 
         font.family: VLCIcons.fontFamily
 
@@ -240,14 +239,14 @@ T.Control {
     }
 
     background: Item {
-        implicitWidth: height
-        implicitHeight: VLCStyle.icon_medium
+        implicitWidth: Math.round(height * 1.6)
+        implicitHeight: VLCStyle.dp(24, VLCStyle.scale)
 
         Widgets.AnimatedBackground {
             anchors.fill: parent
             anchors.margins: -border.width * 4
 
-            radius: width / 2
+            radius: VLCStyle.dp(6, VLCStyle.scale)
             border.pixelAligned: false
 
             enabled: theme.initialized
@@ -258,12 +257,9 @@ T.Control {
         Rectangle {
             anchors.fill: parent
 
-            radius: width / 2
+            radius: VLCStyle.dp(6, VLCStyle.scale)
 
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: "#e25b01" }
-                GradientStop { position: 1.0; color: "#f89a06" }
-            }
+            color: root.cursorInside ? Qt.lighter(theme.accent, 1.15) : theme.accent
 
             Widgets.RoundedRectangleShadow {
                 id: hoverShadow
@@ -280,7 +276,8 @@ T.Control {
             Rectangle {
                 id: innerRectangle
 
-                color: "white"
+                color: "transparent"
+                visible: false
 
                 anchors.fill: parent
                 anchors.margins: _diminished ? (parent.width / 2)

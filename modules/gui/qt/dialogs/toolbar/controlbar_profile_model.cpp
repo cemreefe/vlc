@@ -102,18 +102,17 @@ decltype (ControlbarProfileModel::m_defaults)
                         {
                             {
                                 {
-                                    ControlListModel::VOLUME
-                                },
-                                {
                                     ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::PLAY_BUTTON,
                                     ControlListModel::NEXT_BUTTON
                                 },
                                 {
+                                },
+                                {
+                                    ControlListModel::VOLUME,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON,
-                                    ControlListModel::PLAYLIST_BUTTON,
-                                    ControlListModel::FULLSCREEN_BUTTON
+                                    ControlListModel::PLAYLIST_BUTTON
                                 }
                             }
                         }
@@ -123,18 +122,17 @@ decltype (ControlbarProfileModel::m_defaults)
                         {
                             {
                                 {
-                                    ControlListModel::VOLUME
-                                },
-                                {
                                     ControlListModel::PREVIOUS_BUTTON,
                                     ControlListModel::PLAY_BUTTON,
                                     ControlListModel::NEXT_BUTTON
                                 },
                                 {
+                                },
+                                {
+                                    ControlListModel::VOLUME,
                                     ControlListModel::LANG_BUTTON,
                                     ControlListModel::EXTENDED_BUTTON,
-                                    ControlListModel::PLAYLIST_BUTTON,
-                                    ControlListModel::FULLSCREEN_BUTTON
+                                    ControlListModel::PLAYLIST_BUTTON
                                 }
                             }
                         }

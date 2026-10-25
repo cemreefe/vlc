@@ -67,6 +67,9 @@ FocusScope {
 
     Component.onCompleted: console.assert(identifier >= 0)
 
+    property real gapX: 0
+    property real gapWidth: 0
+
     // Children
 
     Loader {
@@ -118,6 +121,13 @@ FocusScope {
             }
 
             Item {
+                onXChanged: playerControlLayout.gapX = x
+                onWidthChanged: playerControlLayout.gapWidth = width
+                Component.onCompleted: {
+                    playerControlLayout.gapX = x
+                    playerControlLayout.gapWidth = width
+                }
+
                 function containsVisibleItem(repeater) {
                     for (let i = 0; i < repeater.count; ++i) {
                         const item = repeater.itemAt(i)

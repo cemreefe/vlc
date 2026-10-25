@@ -287,6 +287,11 @@ T.Pane {
         RowLayout {
             id: row2
 
+            parent: playerControlLayout
+            x: playerControlLayout.gapX + VLCStyle.margin_small
+            width: Math.max(0, playerControlLayout.gapWidth - 2 * VLCStyle.margin_small)
+            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+
             children: {
                 switch (textPosition) {
                 case ControlBar.TimeTextPosition.Hide:
