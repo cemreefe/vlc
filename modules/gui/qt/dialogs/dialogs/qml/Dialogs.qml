@@ -600,11 +600,24 @@ Item {
         source: "qrc:///qt/qml/VLC/Dialogs/ToolbarEditorDialog.qml"
 
         Connections {
-            target: DialogsProvider
+            target: toolbarEditorDialogLoader.item
 
-            function onShowToolbarEditorDialog() {
-                toolbarEditorDialogLoader.active = true
+            function onUnload() {
+                toolbarEditorDialogLoader.active = false
+            }
+        }
+
+        onLoaded: item.open()
+    }
+
+    Connections {
+        target: DialogsProvider
+
+        function onShowToolbarEditorDialog() {
+            if (toolbarEditorDialogLoader.status === Loader.Ready) {
                 toolbarEditorDialogLoader.item.open()
+            } else {
+                toolbarEditorDialogLoader.active = true
             }
         }
     }

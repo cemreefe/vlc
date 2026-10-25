@@ -29,13 +29,17 @@ WindowDialog {
     id: root
 
     width: minimumWidth
-    height: 600
+    height: 680
 
-    minimumWidth: 825
-    minimumHeight: 400
+    minimumWidth: 1088
+    minimumHeight: 680
 
     modal: true
-    title: qsTr("Toolbar Editor")
+    title: qsTr("Customize Player")
+    standardButtons: 0
+
+    readonly property bool hasChanges: !!MainCtx.controlbarProfileModel.currentModel
+                                       && MainCtx.controlbarProfileModel.currentModel.dirty
 
     signal unload()
 
@@ -75,6 +79,11 @@ WindowDialog {
     }
 
     contentComponent: Item {
+        Rectangle {
+            anchors.fill: parent
+            color: "#161615"
+        }
+
         MouseArea {
             anchors.fill: parent
 
@@ -83,8 +92,53 @@ WindowDialog {
 
         ColumnLayout {
             anchors.fill: parent
+            anchors.margins: VLCStyle.margin_small
 
-            spacing: VLCStyle.margin_small
+            spacing: 8
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Text {
+                    Layout.fillWidth: true
+                    text: qsTr("Customize Player")
+                    color: "#ECECEC"
+                    font.pixelSize: 14
+                    font.weight: Font.Medium
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                T.Button {
+                    Layout.preferredWidth: 28
+                    Layout.preferredHeight: 28
+                    text: "×"
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#8F8F8F"
+                        font.pixelSize: 20
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? "#2B2927" : "transparent"
+                        radius: 4
+                    }
+
+                    onClicked: root.rejected(true)
+                    Accessible.name: qsTr("Cancel")
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                text: qsTr("Drag items around and out of the box below to re-order them. Drag items into the box to remove them from the player.")
+                color: "#8F8F8F"
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
 
             RowLayout {
                 Layout.fillHeight: false
@@ -112,7 +166,7 @@ WindowDialog {
                     implicitWidth: implicitContentWidth
                     font.pixelSize: VLCStyle.fontSize_normal
 
-                    delegate: ItemDelegate {
+                    delegate: T.ItemDelegate {
                         width: comboBox.width
                         leftPadding: comboBox.leftPadding
                         background: Item {}
@@ -182,12 +236,66 @@ WindowDialog {
                 }
             }
 
-            // The main context of the toolbareditor dialog:
             ToolbarEditor {
                 id: toolbarEditor
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                T.Button {
+                    text: qsTr("Cancel")
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 34
+                    leftPadding: 18
+                    rightPadding: 18
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ECECEC"
+                        font.pixelSize: 13
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? "#393633" : "#2B2927"
+                        radius: 5
+                    }
+
+                    onClicked: root.rejected(true)
+                }
+
+                Item { Layout.fillWidth: true }
+
+                T.Button {
+                    text: qsTr("Save")
+                    enabled: root.hasChanges
+                    Layout.preferredWidth: 100
+                    Layout.preferredHeight: 34
+                    leftPadding: 22
+                    rightPadding: 22
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: parent.enabled ? "#161615" : "#8F8F8F"
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: parent.enabled ? VLCStyle.palette.orange500 : "#2B2927"
+                        radius: 5
+                    }
+
+                    onClicked: root.accepted()
+                }
             }
         }
     }

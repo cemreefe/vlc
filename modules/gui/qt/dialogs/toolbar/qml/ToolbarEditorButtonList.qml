@@ -37,8 +37,8 @@ GridView {
     currentIndex: -1
     highlightFollowsCurrentItem: false
 
-    cellWidth: VLCStyle.cover_small
-    cellHeight: cellWidth
+    cellWidth: 110
+    cellHeight: 82
 
     boundsBehavior: Flickable.StopAtBounds
 
@@ -152,10 +152,6 @@ GridView {
 
         readonly property int mIndex: PlayerControlbarControls.controlList[model.index].id
 
-        readonly property ColorContext colorContext: ColorContext {
-            colorSet: ColorContext.Item
-        }
-
         drag.onActiveChanged: {
             if (drag.active) {
                 root.controlDragStarted(mIndex)
@@ -180,44 +176,62 @@ GridView {
             buttonDragItem.x = pos.x + VLCStyle.dragDelta
         }
 
-        Rectangle {
-            anchors.fill: parent
+        Column {
+            anchors.centerIn: parent
+            spacing: 4
 
-            implicitWidth: childrenRect.width
-            implicitHeight: childrenRect.height
+            Item {
+                width: 32
+                height: 32
+                anchors.horizontalCenter: parent.horizontalCenter
 
-            color: "transparent"
+                Canvas {
+                    id: tileBorder
+                    anchors.fill: parent
+                    antialiasing: true
 
-            border.width: VLCStyle.dp(1, VLCStyle.scale)
-            border.color: containsMouse && !buttonDragItem.Drag.active ? colorContext.border
-                                                                       : "transparent"
-            border.pixelAligned: (radius < Number.EPSILON)
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
+                    onPaint: {
+                        const ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        ctx.strokeStyle = "#6F6F6F"
+                        ctx.lineWidth = 1
+                        ctx.setLineDash([3, 3])
+                        ctx.beginPath()
+                        ctx.moveTo(2, 0.5)
+                        ctx.lineTo(width - 2, 0.5)
+                        ctx.quadraticCurveTo(width - 0.5, 0.5, width - 0.5, 2)
+                        ctx.lineTo(width - 0.5, height - 2)
+                        ctx.quadraticCurveTo(width - 0.5, height - 0.5, width - 2, height - 0.5)
+                        ctx.lineTo(2, height - 0.5)
+                        ctx.quadraticCurveTo(0.5, height - 0.5, 0.5, height - 2)
+                        ctx.lineTo(0.5, 2)
+                        ctx.quadraticCurveTo(0.5, 0.5, 2, 0.5)
+                        ctx.stroke()
+                    }
+                }
 
                 EditorDummyButton {
-                    Layout.preferredWidth: VLCStyle.icon_medium
-                    Layout.preferredHeight: VLCStyle.icon_medium
-                    Layout.alignment: Qt.AlignHCenter
-
-                    color: colorContext.fg.primary
+                    anchors.fill: parent
+                    color: "#D0D0D0"
+                    font.pixelSize: 18
                     text: PlayerControlbarControls.controlList[model.index].label
                 }
+            }
 
-                Widgets.ListSubtitleLabel {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    color: colorContext.fg.secondary
-                    elide: Text.ElideNone
-                    fontSizeMode: Text.Fit
-                    text: PlayerControlbarControls.controlList[model.index].text
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                }
+            Text {
+                width: root.cellWidth
+                height: 42
+                text: PlayerControlbarControls.controlList[model.index].text
+                color: "#D0D0D0"
+                font.pixelSize: 13
+                font.weight: Font.Normal
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignTop
             }
         }
+
+        onContainsMouseChanged: tileBorder.requestPaint()
     }
 }

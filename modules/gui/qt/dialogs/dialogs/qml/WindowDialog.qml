@@ -17,6 +17,7 @@
  *****************************************************************************/
 
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Window
 import QtQuick.Layouts
 
@@ -97,6 +98,7 @@ Window {
         DialogButtonBox {
             id: buttonBox
 
+            visible: standardButtons !== 0
             padding: 0
             spacing: VLCStyle.margin_small
 

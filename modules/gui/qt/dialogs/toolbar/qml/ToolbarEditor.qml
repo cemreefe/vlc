@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston MA 02110-1301, USA.
  *****************************************************************************/
 import QtQuick
+import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import QtQml.Models
 
@@ -43,6 +44,11 @@ Item {
         colorSet: ColorContext.View
     }
 
+    Rectangle {
+        anchors.fill: parent
+        color: "#161615"
+    }
+
     ColumnLayout{
         anchors.fill: parent
         spacing: 0
@@ -52,7 +58,7 @@ Item {
             z: 1
 
             background: Rectangle {
-                color: theme.bg.primary
+                color: "#161615"
             }
 
             readonly property int currentIdentifier: currentItem.identifier
@@ -89,20 +95,20 @@ Item {
 
             TextMetrics {
                 id: leftMetric
-                text: qsTr("L   E   F   T")
-                font.pixelSize: VLCStyle.fontSize_xxlarge
+                text: qsTr("Left")
+                font.pixelSize: 12
             }
 
             TextMetrics {
                 id: centerMetric
-                text: qsTr("C   E   N   T   E   R")
-                font.pixelSize: VLCStyle.fontSize_xxlarge
+                text: qsTr("Center")
+                font.pixelSize: 12
             }
 
             TextMetrics {
                 id: rightMetric
-                text: qsTr("R   I   G   H   T")
-                font.pixelSize: VLCStyle.fontSize_xxlarge
+                text: qsTr("Right")
+                font.pixelSize: 12
             }
 
             Repeater {
@@ -190,11 +196,10 @@ Item {
                             readonly property int count: item?.count ?? 0
 
                             sourceComponent: Rectangle {
-                                color: theme.bg.primary
-
-                                border.color: theme.border
-                                border.width: VLCStyle.border
-                                border.pixelAligned: (radius < Number.EPSILON)
+                                color: "#1E1D1C"
+                                radius: 6
+                                border.color: "#2B2927"
+                                border.width: 1
 
                                 property alias count: dndView.count
 
@@ -239,8 +244,8 @@ Item {
 
                                         text: repeater.getMetric(index).text
                                         verticalAlignment: Text.AlignVCenter
-                                        font.pixelSize: VLCStyle.fontSize_xxlarge
-                                        color: theme.fg.secondary
+                                        font.pixelSize: 12
+                                        color: "#6F6F6F"
                                         horizontalAlignment: Text.AlignHCenter
                                         visible: (count === 0)
                                     }
@@ -257,26 +262,20 @@ Item {
             Layout.fillWidth: true
             Layout.topMargin: VLCStyle.margin_xxsmall
 
-            color: buttonList.colorContext.bg.primary
-            border.color: theme.border
-            border.width: VLCStyle.border
-            border.pixelAligned: (radius < Number.EPSILON)
+            color: "#161615"
+            border.color: "#2B2927"
+            border.width: 1
+            radius: 6
 
             ColumnLayout {
                 anchors.fill: parent
-
-                Widgets.MenuCaption {
-                    Layout.margins: VLCStyle.margin_xxsmall
-                    text: qsTr("Drag items below to add them above: ")
-                    color: buttonList.colorContext.fg.primary
-                }
+                anchors.margins: VLCStyle.margin_xsmall
 
                 ToolbarEditorButtonList {
                     id: buttonList
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.margins: VLCStyle.margin_xxsmall
 
                     Component.onCompleted: {
                         controlDragStarted.connect(root.dragStarted)
