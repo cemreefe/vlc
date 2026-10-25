@@ -477,7 +477,7 @@ vlc_module_begin ()
 
     add_float_with_range( "qt-safe-area", 0, 0, 100.0, SAFE_AREA_TEXT, SAFE_AREA_LONGTEXT )
 
-    add_string( "qt-accent-color", "default", ACCENT_COLOR_TEXT, ACCENT_COLOR_LONGTEXT )
+    add_string( "qt-accent-color", "#E87808", ACCENT_COLOR_TEXT, ACCENT_COLOR_LONGTEXT )
 
     cannot_unload_broken_library()
 

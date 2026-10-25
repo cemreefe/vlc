@@ -111,19 +111,19 @@ public:
     Q_PROPERTY(CSDMetrics* csdMetrics READ getCSDMetrics NOTIFY CSDMetricsChanged FINAL)
 
     //standard color definitions used by light/dark themes
-    COLOR_DEFINITION(orange500, "#FF8800");
-    COLOR_DEFINITION(orange800, "#FF610A");
+    COLOR_DEFINITION(orange500, "#E87808");
+    COLOR_DEFINITION(orange800, "#C96200");
 
     COLOR_DEFINITION(orange400, "#f89a06"); //FIXME name have been chosen randomly by me
     COLOR_DEFINITION(orange200, "#e29a06"); //FIXME name have been chosen randomly by me
 
-    COLOR_DEFINITION(darkGrey200, "#1E1E1E");
-    COLOR_DEFINITION(darkGrey300, "#212121");
-    COLOR_DEFINITION(darkGrey400, "#242424");
-    COLOR_DEFINITION(darkGrey500, "#272727");
-    COLOR_DEFINITION(darkGrey600, "#2A2A2A");
-    COLOR_DEFINITION(darkGrey700, "#2D2D2D");
-    COLOR_DEFINITION(darkGrey800, "#303030");
+    COLOR_DEFINITION(darkGrey200, "#161615");
+    COLOR_DEFINITION(darkGrey300, "#2D2B29");
+    COLOR_DEFINITION(darkGrey400, "#222120");
+    COLOR_DEFINITION(darkGrey500, "#262524");
+    COLOR_DEFINITION(darkGrey600, "#2A2927");
+    COLOR_DEFINITION(darkGrey700, "#2B2927");
+    COLOR_DEFINITION(darkGrey800, "#33312E");
 
     COLOR_DEFINITION(lightGrey100, "#FAFAFA");
     COLOR_DEFINITION(lightGrey200, "#F6F6F6");
@@ -156,6 +156,7 @@ public:
 public slots:
     void setSource(ColorSchemeModel::ColorScheme source);
     void setCtx(MainCtx* ctx);
+    void updateAccentColor();
 
 
 signals:
@@ -175,7 +176,7 @@ private:
 private:
     MainCtx* m_ctx = nullptr;
 
-    ColorSchemeModel::ColorScheme m_source = ColorSchemeModel::ColorScheme::Day;
+    ColorSchemeModel::ColorScheme m_source = ColorSchemeModel::ColorScheme::Night;
     bool m_isDark = false;
     bool m_hasCSDImage = false;
 

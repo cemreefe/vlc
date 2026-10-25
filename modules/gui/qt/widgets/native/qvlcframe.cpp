@@ -27,6 +27,7 @@
 #include <QStyle>
 
 #include "qvlcframe.hpp"
+#include "vlcdarkstyle.hpp"
 #include "maininterface/compositor.hpp"
 
 void QVLCTools::saveWidgetPosition(QSettings *settings, QWidget *widget)
@@ -200,6 +201,8 @@ QVLCFrame::QVLCFrame(qt_intf_t *_p_intf) : QWidget( NULL ), p_intf( _p_intf )
 {
     assert(_p_intf);
 
+    setStyleSheet(vlcDarkWidgetStyle(vlcWidgetAccentColor(VLC_OBJECT(_p_intf))));
+
     if (isWindow())
     {
         // If window, set the transient parent:
@@ -246,6 +249,8 @@ QVLCDialog::QVLCDialog(QWindow *parent, qt_intf_t *_p_intf)
 {
     setWindowFlags( Qt::Dialog|Qt::WindowMinMaxButtonsHint|
                     Qt::WindowSystemMenuHint|Qt::WindowCloseButtonHint );
+
+    setStyleSheet(vlcDarkWidgetStyle(vlcWidgetAccentColor(VLC_OBJECT(_p_intf))));
 
     setWindowTransientParent(this, parent, p_intf);
 }

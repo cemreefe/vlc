@@ -304,34 +304,8 @@ SystemPalette::SystemPalette(QObject* parent)
 
 void SystemPalette::componentComplete()
 {
-    {
-        assert(m_ctx);
-        char* accentColor = var_InheritString(m_ctx->getIntf(), "qt-accent-color");
-        assert(accentColor);
-
-        if (!strcmp(accentColor, "default"))
-        {
-            // Use default
-        }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
-        else if (!strcmp(accentColor, "system"))
-        {
-            assert(qApp);
-            const auto palette = qApp->palette();
-
-            orange500 = palette.color(QPalette::Normal, QPalette::Accent);
-            orange800 = orange500.lighter(150);
-        }
-#endif
-        else
-        {
-            orange500 = QColor(accentColor);
-            orange800 = orange500.lighter(150);
-        }
-
-        free(accentColor);
-    }
-
+    assert(m_ctx);
+    updateAccentColor();
     updatePalette();
 }
 
@@ -377,8 +351,39 @@ void SystemPalette::setCtx(MainCtx* ctx)
 {
     if (ctx == m_ctx)
         return;
+    if (m_ctx)
+        disconnect(m_ctx, nullptr, this, nullptr);
     m_ctx = ctx;
+    if (m_ctx)
+        connect(m_ctx, &MainCtx::accentColorChanged,
+                this, &SystemPalette::updateAccentColor);
     emit ctxChanged();
+    updatePalette();
+}
+
+void SystemPalette::updateAccentColor()
+{
+    if (!m_ctx)
+        return;
+
+    const QString value = m_ctx->accentColor();
+    QColor accent;
+    if (value == QLatin1String("default") || value.isEmpty())
+        accent = QColor(QStringLiteral("#E87808"));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+    else if (value == QLatin1String("system"))
+        accent = qApp->palette().color(QPalette::Accent);
+#endif
+    else
+        accent = QColor(value);
+
+    if (!accent.isValid())
+        accent = QColor(QStringLiteral("#E87808"));
+    if (orange500 == accent)
+        return;
+
+    orange500 = accent;
+    orange800 = accent.lighter(150);
     updatePalette();
 }
 
@@ -729,8 +734,8 @@ void SystemPalette::makeDarkPalette()
     //window banner & miniplayer
     {
         C::ColorSet CS = C::Window;
-        setColor(CS, C::Bg, C::Primary, C::Normal, Qt::black); //FIXME
-        setColor(CS, C::Bg, C::Secondary, C::Normal, Qt::black);
+        setColor(CS, C::Bg, C::Primary, C::Normal, QColor("#1B1B1B"));
+        setColor(CS, C::Bg, C::Secondary, C::Normal, QColor("#191919"));
         setColor(CS, C::Decoration, C::Border, C::Normal, darkGrey800); //FIXME not a predef
     }
 

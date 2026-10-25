@@ -494,7 +494,7 @@ void MainCtx::loadFromSettingsImpl(const bool callSignals)
 
     loadFromSettings(m_lyricsMode, "MainWindow/lyrics-mode", true, this, &MainCtx::lyricsModeChanged);
 
-    const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 0 ).toInt();
+    const auto colorSchemeIndex = getSettings()->value( "MainWindow/color-scheme-index", 2 ).toInt();
     m_colorScheme->setCurrentIndex(colorSchemeIndex);
 
     /* user interface scale factor */
@@ -614,6 +614,26 @@ void MainCtx::setHasToolbarMenu( bool hasToolbarMenu )
     config_PutInt("qt-menubar", (int) hasToolbarMenu);
 
     emit hasToolbarMenuChanged();
+}
+
+QString MainCtx::accentColor() const
+{
+    char *accentColor = var_InheritString(p_intf, "qt-accent-color");
+    if (!accentColor)
+        return QStringLiteral("#E87808");
+
+    const QString value = qfu(accentColor);
+    free(accentColor);
+    return value == QLatin1String("default") ? QStringLiteral("#E87808") : value;
+}
+
+void MainCtx::setAccentColor(const QString& accentColor)
+{
+    if (accentColor == this->accentColor())
+        return;
+
+    config_PutPsz("qt-accent-color", qtu(accentColor));
+    emit accentColorChanged();
 }
 
 void MainCtx::setPinVideoControls(bool pinVideoControls)

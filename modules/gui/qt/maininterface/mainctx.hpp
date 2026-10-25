@@ -113,6 +113,7 @@ class MainCtx : public QObject
     Q_PROPERTY(bool hasGridListMode MEMBER m_hasGridListMode NOTIFY hasGridListModeChanged FINAL)
     Q_PROPERTY(Grouping grouping READ grouping WRITE setGrouping NOTIFY groupingChanged FINAL)
     Q_PROPERTY(ColorSchemeModel* colorScheme READ getColorScheme CONSTANT FINAL)
+    Q_PROPERTY(QString accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged FINAL)
     Q_PROPERTY(bool hasVLM READ hasVLM CONSTANT FINAL)
     Q_PROPERTY(bool clientSideDecoration READ useClientSideDecoration NOTIFY useClientSideDecorationChanged FINAL)
     Q_PROPERTY(bool hasFirstrun READ hasFirstrun CONSTANT FINAL)
@@ -240,6 +241,7 @@ public:
     inline bool albumSections() const { return m_albumSections; }
     inline bool lyricsMode() const { return m_lyricsMode; }
     inline ColorSchemeModel* getColorScheme() const { return m_colorScheme; }
+    QString accentColor() const;
     bool hasVLM() const;
     bool useClientSideDecoration() const;
     bool hasFirstrun() const;
@@ -525,6 +527,7 @@ public slots:
     void incrementIntfUserScaleFactor( bool increment);
     void setIntfUserScaleFactor( double );
     void setHasToolbarMenu( bool );
+    void setAccentColor(const QString& accentColor);
 
     void setPinVideoControls( bool );
     void setPinOpacity( float );
@@ -574,6 +577,7 @@ signals:
     void albumSectionsChanged( bool );
     void lyricsModeChanged( bool );
     void colorSchemeChanged( QString );
+    void accentColorChanged();
     void useClientSideDecorationChanged();
     void hasToolbarMenuChanged();
 

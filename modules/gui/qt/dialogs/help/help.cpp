@@ -29,6 +29,7 @@
 #include "help.hpp"
 #include "util/qt_dirs.hpp"
 #include "maininterface/mainctx.hpp"
+#include "widgets/native/vlcdarkstyle.hpp"
 
 #include <vlc_about.h>
 #include <vlc_intf_strings.h>
@@ -87,15 +88,23 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
 {
     /* Build UI */
     ui.setupUi( this );
+    /* Strip the light inline styles from about.ui; the dark theme comes from
+       the shared QVLCDialog stylesheet. */
+    setStyleSheet( vlcDarkWidgetStyle( vlcWidgetAccentColor( VLC_OBJECT(_p_intf) ) ) );
+    const auto styledChildren = findChildren<QWidget*>();
+    for ( QWidget *child : styledChildren )
+        if ( !child->styleSheet().isEmpty() )
+            child->setStyleSheet( QString() );
     setWindowTitle( qtr( "About" ) );
     setWindowRole( "vlc-about" );
     setWindowModality( Qt::WindowModal );
 
     ui.version->setText(qfu( " " VERSION_MESSAGE ) );
-    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#353535;\"> " + qtr( "VLC media player" ) + " </span></p></body></html>");
+    ui.title->setText("<html><head/><body><p><span style=\" font-size:26pt; color:#ECECEC;\"> " + qtr( "VLC media player" ) + " </span></p></body></html>");
 
-    ui.MainBlabla->setText("<html><head/><body>" +
-    qtr( "<p>VLC media player is a free and open source media player, encoder, and streamer made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:#0057ae;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:#0057ae;\">Help and join us!</span></a>" ) +
+    const QString accent = vlcWidgetAccentColor( VLC_OBJECT(_p_intf) );
+    ui.MainBlabla->setText(QStringLiteral("<html><head/><body>") +
+    qtr( "<p>VLC media player is a free and open source media player, encoder, and streamer made by the volunteers of the <a href=\"https://www.videolan.org/\"><span style=\" text-decoration: underline; color:%1;\">VideoLAN</span></a> community.</p><p>VLC uses its internal codecs, works on essentially every popular platform, and can read almost all files, CDs, DVDs, network streams, capture cards and other media formats!</p><p><a href=\"https://www.videolan.org/contribute/\"><span style=\" text-decoration: underline; color:%1;\">Help and join us!</span></a>" ).arg(accent) +
     "</p></body> </html>");
 
     const QDate today = QDate::currentDate();
@@ -114,13 +123,13 @@ AboutDialog::AboutDialog( qt_intf_t *_p_intf)
     /* People who wrote the software */
     ui.authorsPage->setText( qfu( psz_authors ) );
 
-    ui.licenseButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "License" )+"</span></p></body></html>");
+    ui.licenseButton->setText( QStringLiteral("<html><head/><body><p><span style=\" text-decoration: underline; color:%1;\">").arg(accent) + qtr( "License" ) + "</span></p></body></html>");
     ui.licenseButton->installEventFilter( this );
 
-    ui.authorsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "Authors" )+"</span></p></body></html>");
+    ui.authorsButton->setText( QStringLiteral("<html><head/><body><p><span style=\" text-decoration: underline; color:%1;\">").arg(accent) + qtr( "Authors" ) + "</span></p></body></html>");
     ui.authorsButton->installEventFilter( this );
 
-    ui.creditsButton->setText( "<html><head/><body><p><span style=\" text-decoration: underline; color:#0057ae;\">"+qtr( "Credits" )+"</span></p></body></html>");
+    ui.creditsButton->setText( QStringLiteral("<html><head/><body><p><span style=\" text-decoration: underline; color:%1;\">").arg(accent) + qtr( "Credits" ) + "</span></p></body></html>");
     ui.creditsButton->installEventFilter( this );
 
     ui.version->installEventFilter( this );
