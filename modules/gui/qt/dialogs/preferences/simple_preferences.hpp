@@ -48,6 +48,7 @@ class QLineEdit;
 class QLabel;
 class QPushButton;
 class QAbstractButton;
+class QGroupBox;
 
 enum {
     SPrefsInterface = 0,
@@ -60,6 +61,23 @@ enum {
     SPrefsMax
 };
 #define SPrefsDefaultCat SPrefsInterface
+
+enum SettingsPage {
+    SettingsPageGeneral = 0,
+    SettingsPageInterface,
+    SettingsPagePrivacy,
+    SettingsPageControls,
+    SettingsPagePlayback,
+    SettingsPageVideo,
+    SettingsPageAudio,
+    SettingsPageSubtitles,
+    SettingsPageLibrary,
+    SettingsPageNetwork,
+    SettingsPagePerformance,
+    SettingsPageRecording,
+    SettingsPageExtensions,
+    SettingsPageMax
+};
 
 enum {
     CachingCustom = 0,
@@ -87,6 +105,7 @@ private:
     qt_intf_t *p_intf;
 signals:
     void currentItemChanged( int );
+    void searchRequested( const QString& );
 public slots:
     void switchPanel( int );
 };
@@ -98,6 +117,7 @@ public:
     SPrefsPanel( qt_intf_t *, QWidget *, int );
     virtual ~SPrefsPanel();
     void apply();
+    QGroupBox *takePrivacyGroup();
 #ifdef _WIN32
     void cleanLang();
 #endif

@@ -121,6 +121,7 @@ private:
     QPushButton *butMoreInfo;
 
     friend class PluginDialog;
+    friend class PrefsDialog;
 };
 
 class AddonsTab : public QVLCFrame

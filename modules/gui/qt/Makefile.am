@@ -807,6 +807,21 @@ libqt_plugin_la_RES = \
 	pixmaps/icons/add.svg \
 	pixmaps/icons/ic_album_cover.svg \
 	pixmaps/icons/ic_aspect_ratio.svg \
+	pixmaps/icons/settings-sliders-horizontal.svg \
+	pixmaps/icons/settings-mouse-pointer.svg \
+	pixmaps/icons/settings-shield.svg \
+	pixmaps/icons/settings-keyboard.svg \
+	pixmaps/icons/settings-play.svg \
+	pixmaps/icons/settings-clapperboard.svg \
+	pixmaps/icons/settings-audio-lines.svg \
+	pixmaps/icons/settings-captions.svg \
+	pixmaps/icons/settings-folder.svg \
+	pixmaps/icons/settings-radio-tower.svg \
+	pixmaps/icons/settings-gauge.svg \
+	pixmaps/icons/settings-circle-dot.svg \
+	pixmaps/icons/settings-puzzle.svg \
+	pixmaps/icons/settings-toggle-off.svg \
+	pixmaps/icons/settings-toggle-on.svg \
 	pixmaps/icons/atob.svg \
 	pixmaps/icons/ic_audiosub.svg \
 	pixmaps/icons/back.svg \

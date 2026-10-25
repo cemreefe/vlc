@@ -38,6 +38,8 @@ class QCheckBox;
 class SearchLineEdit;
 class QStackedWidget;
 class QSplitter;
+class QLabel;
+class QPushButton;
 
 class PrefsDialog : public QVLCDialog
 {
@@ -45,6 +47,7 @@ class PrefsDialog : public QVLCDialog
 public:
     PrefsDialog( QWindow *, qt_intf_t * );
     virtual ~PrefsDialog();
+    void showHotkeysPage();
 
 private:
     size_t count;
@@ -62,8 +65,13 @@ private:
     QWidget *simple_split_widget;
     QWidget *simple_tree_panel;
     SPrefsCatList *simple_tree;
+    QWidget *simple_content;
+    QLabel *simple_header_title;
     QStackedWidget *simple_panels_stack;
     SPrefsPanel *simple_panels[SPrefsMax];
+    QWidget *simple_pages[SettingsPageMax];
+    QPushButton *advanced_button;
+    QPushButton *back_button;
 
     /* Advanced view components */
     QSplitter *advanced_split_widget;
@@ -86,6 +94,7 @@ private slots:
     void setExpert();
     void setAdvanced();
     void setSimple();
+    void createAdvancedTree();
 
     void changeExpertDesc( const QModelIndex &, const QModelIndex & );
     void changeAdvPanel( QTreeWidgetItem * );

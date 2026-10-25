@@ -32,12 +32,17 @@
 #include "dialogs/preferences/simple_preferences.hpp"
 #include "dialogs/dialogs/dialogmodel.hpp"
 #include "dialogs/dialogs_provider.hpp"
+#include "dialogs/plugins/plugins.hpp"
 #include "widgets/native/searchlineedit.hpp"
 #include "widgets/native/qvlcframe.hpp"
+#include "widgets/native/vlcdarkstyle.hpp"
 #include "maininterface/mainctx.hpp"
 
 #include <QHBoxLayout>
+#include <QVBoxLayout>
 #include <QGroupBox>
+#include <QLabel>
+#include <QToolButton>
 #include <QRadioButton>
 #include <QPushButton>
 #include <QMessageBox>
@@ -46,15 +51,65 @@
 #include <QSplitter>
 #include <QShortcut>
 
+#include <functional>
+#include <cstring>
+
 #include <vlc_configuration.h>
 #include <vlc_modules.h>
+
+static QString preferencesStyle(qt_intf_t *p_intf)
+{
+    const QString accent = vlcWidgetAccentColor(VLC_OBJECT(p_intf));
+    const QColor accentColor(accent);
+    const QString accentHover =
+            accentColor.lighter(110).name(QColor::HexRgb).toUpper();
+
+    return vlcDarkWidgetStyle(accent) + QStringLiteral(
+        "QDialog#settingsDialog { background: #161615; color: #ECECEC; }"
+        "QWidget#settingsSidebarPanel { background: #121211; }"
+        "QWidget#settingsContent { background: #161615; }"
+        "QStackedWidget#settingsPanelsStack { background: #161615; }"
+        "QLineEdit#settingsSearch { background: #1E1D1C; border: 1px solid #2B2927; border-radius: 4px; color: #D0D0D0; padding: 4px 8px; }"
+        "QScrollArea { background: #161615; border: none; }"
+        "QLabel#settingsSectionLabel { color: #8F8F8F; font-size: 11px; margin: 12px 4px 4px; }"
+        "QToolButton#settingsNavItem { border: none; text-align: left; padding: 0 8px; color: #D0D0D0; }"
+        "QToolButton#settingsNavItem:hover { background: #1E1D1C; border-radius: 6px; }"
+        "QToolButton#settingsNavItem:checked { background: #262423; border-radius: 6px; color: #ECECEC; }"
+        "QLabel#settingsPageTitle { color: #ECECEC; font-size: 15px; }"
+        "QToolButton#settingsCloseButton { border: none; color: #8F8F8F; font-size: 20px; padding: 0 8px; }"
+        "QGroupBox { border: none; margin-top: 16px; color: #ECECEC; font-size: 14px; }"
+        "QGroupBox::title { subcontrol-origin: margin; top: 0; left: 0; }"
+        "QCheckBox { color: #D0D0D0; spacing: 10px; direction: rtl; text-align: left; }"
+        "QCheckBox::indicator { width: 40px; height: 20px; image: url(:/settings/toggle-off.svg); background: #2B2927; border-radius: 10px; }"
+        "QCheckBox::indicator:checked { image: url(:/settings/toggle-on.svg); background: %1; }"
+        "QComboBox, QLineEdit, QSpinBox { background: #1E1D1C; border: 1px solid #2B2927; border-radius: 4px; color: #D0D0D0; min-height: 28px; padding: 2px 8px; }"
+        "QComboBox QAbstractItemView { background: #1E1D1C; color: #D0D0D0; selection-background-color: #262423; }"
+        "QSlider::groove:horizontal { height: 4px; background: #2B2927; border-radius: 2px; }"
+        "QSlider::sub-page:horizontal { background: %1; border-radius: 2px; }"
+        "QSlider::handle:horizontal { width: 14px; margin: -5px 0; border-radius: 7px; background: %1; }"
+        "QPushButton#settingsSaveButton { background: %1; border: none; border-radius: 5px; color: #161615; padding: 7px 18px; }"
+        "QPushButton#settingsSaveButton:hover { background: %2; }"
+        "QPushButton#settingsAdvancedButton, QPushButton#settingsBackButton { background: transparent; border: none; color: %1; padding: 7px 10px; }"
+        "QLabel#settingsThemeSectionLabel { color: #ECECEC; font-size: 14px; }"
+        "QPushButton#settingsThemeSegment { background: #1E1D1C; border: 1px solid #2B2927; border-right: none; color: #8F8F8F; padding: 6px 16px; min-height: 30px; }"
+        "QPushButton#settingsThemeSegment[segmentPosition=\"first\"] { border-top-left-radius: 5px; border-bottom-left-radius: 5px; }"
+        "QPushButton#settingsThemeSegment[segmentPosition=\"last\"] { border-right: 1px solid #2B2927; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }"
+        "QPushButton#settingsThemeSegment:checked { background: #3A2410; color: %1; border-color: %1; }"
+    ).arg(accent, accentHover);
+}
 
 PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
             : QVLCDialog( parent, _p_intf )
 {
-    setWindowTitle( qtr( "Preferences" ) );
+    setWindowTitle( qtr( "Settings" ) );
+    setObjectName("settingsDialog");
     setWindowRole( "vlc-preferences" );
     setWindowModality( Qt::WindowModal );
+    setMinimumSize(850, 650);
+    setStyleSheet(preferencesStyle(_p_intf));
+    if (_p_intf->p_mi)
+        connect(_p_intf->p_mi, &MainCtx::accentColorChanged, this,
+                [this, _p_intf]() { setStyleSheet(preferencesStyle(_p_intf)); });
 
     /* Whether we want it or not, we need to destroy on close to get
        consistency when reset */
@@ -62,8 +117,9 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
 
     p_list = NULL;
 
-    QGridLayout *main_layout = new QGridLayout( this );
-    setLayout( main_layout );
+    auto *main_layout = new QVBoxLayout(this);
+    main_layout->setContentsMargins(0, 0, 0, 0);
+    main_layout->setSpacing(0);
 
     /* View (panel) selection */
     types = new QGroupBox( qtr("Show settings") );
@@ -86,6 +142,7 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
     /* Buttons */
     QDialogButtonBox *buttonsBox = new QDialogButtonBox();
     QPushButton *save = new QPushButton( qtr( "&Save" ) );
+    save->setObjectName("settingsSaveButton");
     save->setToolTip( qtr( "Save and close the dialog" ) );
     QPushButton *cancel = new QPushButton( qtr( "&Cancel" ) );
     QPushButton *reset = new QPushButton( qtr( "&Reset Preferences" ) );
@@ -99,21 +156,51 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
 
     /* Simple view (panel) */
     simple_split_widget = new QWidget();
-    simple_split_widget->setLayout( new QVBoxLayout );
+    simple_split_widget->setObjectName("settingsSimpleView");
+    auto *simple_layout = new QVBoxLayout(simple_split_widget);
+    simple_layout->setContentsMargins(0, 0, 0, 0);
+    simple_layout->setSpacing(0);
 
-    simple_tree_panel = new QWidget;
-    simple_tree_panel->setLayout( new QVBoxLayout );
-    simple_tree = NULL;
-    simple_panels_stack = new QStackedWidget;
+    auto *simple_row = new QHBoxLayout;
+    simple_row->setContentsMargins(0, 0, 0, 0);
+    simple_row->setSpacing(0);
+
+    simple_tree_panel = new QWidget(simple_split_widget);
+    simple_tree_panel->setObjectName("settingsSidebarPanel");
+    simple_tree_panel->setLayout(new QVBoxLayout);
+    simple_tree_panel->layout()->setContentsMargins(0, 0, 0, 0);
+    simple_tree = nullptr;
+    simple_content = new QWidget(simple_split_widget);
+    simple_content->setObjectName("settingsContent");
+    auto *content_layout = new QVBoxLayout(simple_content);
+    content_layout->setContentsMargins(24, 18, 24, 10);
+    content_layout->setSpacing(10);
+
+    auto *header = new QHBoxLayout;
+    simple_header_title = new QLabel(qtr("General Preferences"), simple_content);
+    simple_header_title->setObjectName("settingsPageTitle");
+    auto *close_button = new QToolButton(simple_content);
+    close_button->setObjectName("settingsCloseButton");
+    close_button->setText(QString::fromUtf8("×"));
+    close_button->setFixedSize(32, 32);
+    header->addWidget(simple_header_title);
+    header->addStretch(1);
+    header->addWidget(close_button);
+    content_layout->addLayout(header);
+
+    simple_panels_stack = new QStackedWidget(simple_content);
+    simple_panels_stack->setObjectName("settingsPanelsStack");
+    content_layout->addWidget(simple_panels_stack, 1);
+
+    simple_row->addWidget(simple_tree_panel);
+    simple_row->addWidget(simple_content, 1);
+    simple_layout->addLayout(simple_row, 1);
+    simple_content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    simple_tree_panel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    for (int i = 0; i < SettingsPageMax; ++i)
+        simple_pages[i] = nullptr;
     for( int i = 0; i < SPrefsMax ; i++ )
         simple_panels[i] = NULL;
-
-    simple_split_widget->layout()->addWidget( simple_tree_panel );
-    simple_split_widget->layout()->addWidget( simple_panels_stack );
-
-    simple_tree_panel->layout()->setContentsMargins(1, 1, 1, 1);
-    simple_panels_stack->setContentsMargins( 6, 0, 0, 3 );
-    simple_split_widget->layout()->setContentsMargins(0, 0, 0, 0);
 
     stack->insertWidget( SIMPLE, simple_split_widget );
 
@@ -121,6 +208,7 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
     advanced_split_widget = new QSplitter();
 
     advanced_tree_panel = new QWidget;
+    advanced_tree_panel->setObjectName("settingsAdvancedSidebar");
     advanced_tree_panel->setLayout( new QVBoxLayout );
     tree_filter = NULL;
     current_filter = NULL;
@@ -161,11 +249,25 @@ PrefsDialog::PrefsDialog( QWindow *parent, qt_intf_t *_p_intf )
     stack->insertWidget( EXPERT, expert_widget );
 
     /* Layout  */
-    main_layout->addWidget( stack, 0, 0, 3, 3 );
-    main_layout->addWidget( types, 3, 0, 2, 1 );
-    main_layout->addWidget( buttonsBox, 4, 2, 1 ,1 );
-    main_layout->setRowStretch( 2, 4 );
-    main_layout->setContentsMargins(9, 9, 9, 9);
+    main_layout->addWidget(stack, 1);
+    auto *footer = new QHBoxLayout;
+    footer->setContentsMargins(12, 8, 12, 8);
+    advanced_button = new QPushButton(qtr("Advanced settings"));
+    advanced_button->setObjectName("settingsAdvancedButton");
+    back_button = new QPushButton(qtr("← Back"));
+    back_button->setObjectName("settingsBackButton");
+    back_button->hide();
+    types->hide();
+    footer->addWidget(advanced_button);
+    footer->addWidget(back_button);
+    footer->addStretch(1);
+    footer->addWidget(buttonsBox);
+    main_layout->addLayout(footer);
+
+    connect(close_button, &QToolButton::clicked, this, &PrefsDialog::save);
+    connect(advanced_button, &QPushButton::clicked, this, &PrefsDialog::setAdvanced);
+    connect(back_button, &QPushButton::clicked, this, &PrefsDialog::setSimple);
+    createAdvancedTree();
 
     switch( var_InheritInteger( p_intf, "qt-initial-prefs-view" ) )
     {
@@ -229,78 +331,212 @@ void PrefsDialog::setExpert()
 
     expert->setChecked( true );
     stack->setCurrentIndex( EXPERT );
-    setWindowTitle( qtr( "Expert Preferences" ) );
+    advanced_button->hide();
+    back_button->show();
+    setWindowTitle( qtr( "Settings" ) );
+}
+
+void PrefsDialog::createAdvancedTree()
+{
+    if (advanced_tree)
+        return;
+
+    if (!p_list)
+        p_list = module_list_get(&count);
+
+    advanced_tree = new PrefsTree(p_intf, advanced_tree_panel, p_list, count);
+
+    tree_filter = new SearchLineEdit(advanced_tree_panel);
+    tree_filter->setMinimumHeight(26);
+
+    current_filter = new QCheckBox(qtr("Only show current"));
+    current_filter->setToolTip(qtr("Only show modules related to current playback"));
+
+    QShortcut *search = new QShortcut(QKeySequence(QKeySequence::Find), tree_filter);
+
+    advanced_tree_panel->layout()->addWidget(tree_filter);
+    advanced_tree_panel->layout()->addWidget(current_filter);
+    advanced_tree_panel->layout()->addWidget(advanced_tree);
+    advanced_tree_panel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+
+    connect(advanced_tree, &PrefsTree::currentItemChanged, this, &PrefsDialog::changeAdvPanel);
+    connect(tree_filter, &SearchLineEdit::textChanged,
+            this, &PrefsDialog::advancedTreeFilterChanged);
+    connect(current_filter, &QtCheckboxChanged, this, &PrefsDialog::onlyLoadedToggled);
+    connect(search, &QShortcut::activated,
+            tree_filter, QOverload<>::of(&SearchLineEdit::setFocus));
+
+    advanced_tree->setCurrentIndex(
+            advanced_tree->model()->index(0, 0, QModelIndex()));
 }
 
 void PrefsDialog::setAdvanced()
 {
-    /* Lazy creation */
-    if( !advanced_tree )
-    {
-        if ( !p_list )
-            p_list = module_list_get( &count );
-
-        advanced_tree = new PrefsTree( p_intf, advanced_tree_panel, p_list, count );
-
-        tree_filter = new SearchLineEdit( advanced_tree_panel );
-        tree_filter->setMinimumHeight( 26 );
-
-        current_filter = new QCheckBox( qtr("Only show current") );
-        current_filter->setToolTip(
-                    qtr("Only show modules related to current playback") );
-
-        QShortcut *search = new QShortcut( QKeySequence( QKeySequence::Find ), tree_filter );
-
-        advanced_tree_panel->layout()->addWidget( tree_filter );
-        advanced_tree_panel->layout()->addWidget( current_filter );
-        advanced_tree_panel->layout()->addWidget( advanced_tree );
-        advanced_tree_panel->setSizePolicy( QSizePolicy::Maximum, QSizePolicy::Preferred );
-
-        connect( advanced_tree, &PrefsTree::currentItemChanged, this, &PrefsDialog::changeAdvPanel );
-        connect( tree_filter, &SearchLineEdit::textChanged, this, &PrefsDialog::advancedTreeFilterChanged );
-        connect( current_filter, &QtCheckboxChanged, this, &PrefsDialog::onlyLoadedToggled );
-        connect( search, &QShortcut::activated, tree_filter, QOverload<>::of(&SearchLineEdit::setFocus) );
-
-        /* Set initial selection */
-        advanced_tree->setCurrentIndex(
-                advanced_tree->model()->index( 0, 0, QModelIndex() ) );
-    }
-
-    all->setChecked( true );
-    stack->setCurrentIndex( ADVANCED );
-    setWindowTitle( qtr( "Advanced Preferences" ) );
+    createAdvancedTree();
+    all->setChecked(true);
+    stack->setCurrentIndex(ADVANCED);
+    advanced_button->hide();
+    back_button->show();
+    setWindowTitle(qtr("Settings"));
 }
 
 void PrefsDialog::setSimple()
 {
-    /* If no simple_tree, create one, connect it */
-    if( !simple_tree )
+    if (!simple_tree)
     {
-        simple_tree = new SPrefsCatList( p_intf, simple_tree_panel );
-        connect( simple_tree, &SPrefsCatList::currentItemChanged,
-                 this, &PrefsDialog::changeSimplePanel );
-        simple_tree_panel->layout()->addWidget( simple_tree );
-        simple_tree_panel->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Preferred );
+        simple_tree = new SPrefsCatList(p_intf, simple_tree_panel);
+        connect(simple_tree, &SPrefsCatList::currentItemChanged,
+                this, &PrefsDialog::changeSimplePanel);
+        connect(simple_tree, &SPrefsCatList::searchRequested, this,
+                [this](const QString& text) {
+                    if (text.isEmpty())
+                        return;
+                    setAdvanced();
+                    tree_filter->setText(text);
+                    tree_filter->setFocus();
+                });
+        simple_tree_panel->layout()->addWidget(simple_tree);
     }
 
-    if( ! simple_panels[SPrefsDefaultCat] )
-        changeSimplePanel( SPrefsDefaultCat );
+    if (!simple_pages[SettingsPageGeneral])
+    {
+        auto *panel = new SPrefsPanel(p_intf, simple_panels_stack, SPrefsInterface);
+        simple_panels[SPrefsInterface] = panel;
+        simple_pages[SettingsPageGeneral] = panel;
+        simple_panels_stack->addWidget(panel);
 
-    simple->setChecked( true );
-    stack->setCurrentIndex( SIMPLE );
-    setWindowTitle( qtr( "Simple Preferences" ) );
+        auto *privacyPage = new QWidget(simple_panels_stack);
+        auto *privacyLayout = new QVBoxLayout(privacyPage);
+        privacyLayout->setContentsMargins(0, 8, 0, 0);
+        if (QGroupBox *privacyGroup = panel->takePrivacyGroup())
+            privacyLayout->addWidget(privacyGroup);
+        privacyLayout->addStretch(1);
+        simple_pages[SettingsPagePrivacy] = privacyPage;
+        simple_panels_stack->addWidget(privacyPage);
+    }
+
+    changeSimplePanel(SettingsPageGeneral);
+
+    simple->setChecked(true);
+    stack->setCurrentIndex(SIMPLE);
+    advanced_button->show();
+    back_button->hide();
+    setWindowTitle(qtr("Settings"));
+}
+
+void PrefsDialog::showHotkeysPage()
+{
+    setSimple();
+    simple_tree->switchPanel(SettingsPageControls);
+    show();
+    raise();
+    activateWindow();
 }
 
 /* Switching from on simple panel to another */
-void PrefsDialog::changeSimplePanel( int number )
+void PrefsDialog::changeSimplePanel(int number)
 {
-    if( ! simple_panels[number] )
+    if (number < 0 || number >= SettingsPageMax)
+        return;
+
+    auto addPanel = [this](int page, int category) {
+        if (!simple_panels[category])
+            simple_panels[category] = new SPrefsPanel(p_intf, simple_panels_stack, category);
+        simple_pages[page] = simple_panels[category];
+        if (simple_panels_stack->indexOf(simple_pages[page]) < 0)
+            simple_panels_stack->addWidget(simple_pages[page]);
+    };
+
+    auto findNode = [this](const char *module, int subcategory) -> PrefsTreeItem * {
+        std::function<PrefsTreeItem *(PrefsTreeItem *)> search =
+                [&](PrefsTreeItem *node) -> PrefsTreeItem * {
+            if (!node)
+                return nullptr;
+            if ((module && node->module_name && std::strcmp(node->module_name, module) == 0)
+                    || (subcategory >= 0 && node->subcat_id == subcategory))
+                return node;
+            for (int i = 0; i < node->childCount(); ++i)
+                if (PrefsTreeItem *found = search(node->child(i)))
+                    return found;
+            return nullptr;
+        };
+        for (int i = 0; i < advanced_tree->topLevelItemCount(); ++i)
+            if (PrefsTreeItem *found = search(advanced_tree->topLevelItem(i)))
+                return found;
+        return nullptr;
+    };
+
+    switch (number)
     {
-        SPrefsPanel *insert = new SPrefsPanel( p_intf, simple_panels_stack, number ) ;
-        simple_panels_stack->insertWidget( number, insert );
-        simple_panels[number] = insert;
+        case SettingsPageControls:
+            addPanel(number, SPrefsHotkeys);
+            break;
+        case SettingsPagePlayback:
+            addPanel(number, SPrefsInputAndCodecs);
+            break;
+        case SettingsPageVideo:
+            addPanel(number, SPrefsVideo);
+            break;
+        case SettingsPageAudio:
+            addPanel(number, SPrefsAudio);
+            break;
+        case SettingsPageSubtitles:
+            addPanel(number, SPrefsSubtitles);
+            break;
+        case SettingsPageLibrary:
+            addPanel(number, SPrefsMediaLibrary);
+            break;
+        case SettingsPageInterface:
+        case SettingsPageNetwork:
+        case SettingsPagePerformance:
+        case SettingsPageRecording:
+        {
+            const char *module = nullptr;
+            int subcategory = -1;
+            if (number == SettingsPageInterface)
+                module = "qt";
+            else if (number == SettingsPageNetwork)
+                subcategory = SUBCAT_INPUT_ACCESS;
+            else if (number == SettingsPagePerformance)
+                subcategory = SUBCAT_ADVANCED_MISC;
+            else
+                subcategory = SUBCAT_SOUT_GENERAL;
+
+            if (!simple_pages[number])
+            {
+                PrefsTreeItem *node = findNode(module, subcategory);
+                if (!node)
+                    return;
+                auto *panel = new AdvPrefsPanel(p_intf, simple_panels_stack, node);
+                simple_pages[number] = panel;
+                simple_panels_stack->addWidget(panel);
+            }
+            break;
+        }
+        case SettingsPageExtensions:
+            if (!simple_pages[number])
+            {
+                auto *extensions = new ExtensionTab(p_intf);
+                extensions->setParent(simple_panels_stack);
+                simple_pages[number] = extensions;
+                simple_panels_stack->addWidget(extensions);
+            }
+            break;
+        case SettingsPageGeneral:
+        case SettingsPagePrivacy:
+            break;
+        default:
+            return;
     }
-    simple_panels_stack->setCurrentWidget( simple_panels[number] );
+
+    static const char *pageNames[] = {
+        "General", "Interface", "Privacy", "Controls", "Playback", "Video",
+        "Audio", "Subtitles", "Library", "Network", "Performance", "Recording",
+        "Extensions"
+    };
+    simple_header_title->setText(qtr(pageNames[number]) + qtr(" Preferences"));
+    if (simple_pages[number])
+        simple_panels_stack->setCurrentWidget(simple_pages[number]);
 }
 
 /* Changing from one Advanced Panel to another */
@@ -335,10 +571,14 @@ void PrefsDialog::save()
     if( simple->isChecked() && simple_tree->isVisible() )
     {
         msg_Dbg( p_intf, "Saving the simple preferences" );
-        for( int i = 0 ; i< SPrefsMax; i++ ){
-            if( simple_panels_stack->widget(i) )
-                qobject_cast<SPrefsPanel *>(simple_panels_stack->widget(i))->apply();
-        }
+        if (advanced_tree)
+            advanced_tree->applyAll();
+        for (SPrefsPanel *panel : simple_panels)
+            if (panel)
+                panel->apply();
+        for (int i = 0; i < SettingsPageMax; ++i)
+            if (auto *panel = qobject_cast<AdvPrefsPanel *>(simple_pages[i]))
+                panel->apply();
     }
     else if( all->isChecked() && advanced_tree->isVisible() )
     {
@@ -432,7 +672,8 @@ void PrefsDialog::reset()
         p_intf->p_mi->reloadFromSettings();
 
 #ifdef _WIN32
-        simple_panels[0]->cleanLang();
+        if (simple_panels[0])
+            simple_panels[0]->cleanLang();
 #endif
 
     }

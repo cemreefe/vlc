@@ -34,6 +34,8 @@
 #include "util/color_scheme_model.hpp"
 #include "util/proxycolumnmodel.hpp"
 #include "medialibrary/mlrecentmediamodel.hpp"
+#include "widgets/native/vlcdarkstyle.hpp"
+#include "widgets/native/searchlineedit.hpp"
 
 #include <vlc_config_cat.h>
 #include <vlc_configuration.h>
@@ -43,6 +45,10 @@
 #include <QFont>
 #include <QToolButton>
 #include <QButtonGroup>
+#include <QIcon>
+#include <QColor>
+#include <QPainter>
+#include <QPixmap>
 #include <QSignalMapper>
 #include <QVBoxLayout>
 #include <QScrollArea>
@@ -220,56 +226,106 @@ private:
 /*********************************************************************
  * The List of categories
  *********************************************************************/
+static QIcon settingsIcon(const QString& path, const QColor& color)
+{
+    const QPixmap source = QIcon(path).pixmap(16, 16);
+    QPixmap tinted(source.size());
+    tinted.fill(Qt::transparent);
+
+    QPainter painter(&tinted);
+    painter.drawPixmap(0, 0, source);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(tinted.rect(), color);
+
+    return QIcon(tinted);
+}
+
 SPrefsCatList::SPrefsCatList( qt_intf_t *_p_intf, QWidget *_parent ) :
                                   QWidget( _parent ), p_intf( _p_intf )
 {
-    QHBoxLayout *layout = new QHBoxLayout();
+    auto *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(4);
 
-    /* Use autoExclusive buttons and a mapper as QButtonGroup can't
-       set focus (keys) when it manages the buttons's exclusivity.
-       See QT bugs 131 & 816 and QAbstractButton's source code. */
-    QSignalMapper *mapper = new QSignalMapper( layout );
-    connect( mapper, &QSignalMapper::mappedInt, this, &SPrefsCatList::switchPanel );
-    qreal dpr = devicePixelRatioF();
+    auto *search = new SearchLineEdit(this);
+    search->setObjectName("settingsSearch");
+    search->setPlaceholderText(qtr("Search"));
+    search->setMinimumHeight(32);
+    connect(search, &QLineEdit::textChanged, this, &SPrefsCatList::searchRequested);
+    layout->addWidget(search);
 
-    auto addCategory = [&]( QString label, QString ltooltip, QString icon, int numb) {
-        QToolButton * button = new QToolButton( this );
-        /* Scale icon to non native size outside of toolbutton to avoid widget size */
-        /* computation using native size */
-        QPixmap scaled = QPixmap( icon )
-              .scaledToHeight( ICON_HEIGHT * dpr, Qt::SmoothTransformation );
-        scaled.setDevicePixelRatio( dpr );
-        button->setIcon( scaled );
-        button->setText( label );
-        button->setToolTip( ltooltip );
-        button->setToolButtonStyle( Qt::ToolButtonTextUnderIcon );
-        button->setIconSize( QSize( ICON_WIDTH, ICON_HEIGHT ) );
-        button->setMinimumWidth( 40 + ICON_WIDTH );
-        button->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
-        button->setAutoRaise( true );
-        button->setCheckable( true );
-        button->setAutoExclusive( true );
-        connect( button, &QToolButton::clicked, mapper, QOverload<>::of(&QSignalMapper::map) );
-        mapper->setMapping( button, numb );
-        layout->addWidget( button );
+    auto *group = new QButtonGroup(this);
+    group->setExclusive(true);
+
+    auto refreshIcon = [this](QToolButton *button) {
+        const QString iconName = button->property("settingsIconName").toString();
+        const QColor color = button->isChecked()
+                ? QColor(vlcWidgetAccentColor(VLC_OBJECT(p_intf)))
+                : QColor("#8F8F8F");
+        button->setIcon(settingsIcon(QString(":/settings/%1.svg").arg(iconName), color));
     };
 
-    addCategory( qfut(INTF_TITLE), qfut(INTF_TOOLTIP), ":/prefsmenu/spref_interface.png" , SPrefsInterface );
-    addCategory( qfut(AUDIO_TITLE), qfut(AUDIO_TOOLTIP), ":/prefsmenu/spref_audio.png", SPrefsAudio );
-    addCategory( qfut(VIDEO_TITLE), qfut(VIDEO_TOOLTIP), ":/prefsmenu/spref_video.png", SPrefsVideo );
-    addCategory( qfut(SUBPIC_TITLE), qfut(SUBPIC_TOOLTIP), ":/prefsmenu/spref_subtitles.png", SPrefsSubtitles );
-    addCategory( qfut(INPUT_TITLE), qfut(INPUT_TOOLTIP), ":/prefsmenu/spref_input.png", SPrefsInputAndCodecs );
-    addCategory( qfut(HOTKEYS_TITLE), qfut(HOTKEYS_TOOLTIP), ":/prefsmenu/spref_hotkeys.png", SPrefsHotkeys );
-    if ( vlc_ml_instance_get( p_intf ) != nullptr )
-        addCategory( qfut(ML_TITLE), qfut(ML_TOOLTIP), ":/prefsmenu/spref_medialibrary.png", SPrefsMediaLibrary );
+    auto addSection = [layout](const QString& title) {
+        auto *label = new QLabel(title);
+        label->setObjectName("settingsSectionLabel");
+        layout->addWidget(label);
+    };
 
-    qobject_cast<QToolButton*>(mapper->mapping(SPrefsInterface))->setChecked(true);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing( 1 );
+    auto addCategory = [this, layout, group, refreshIcon](const QString& label,
+                                              const QString& iconName,
+                                              int page) {
+        auto *button = new QToolButton(this);
+        button->setObjectName("settingsNavItem");
+        button->setProperty("settingsIconName", iconName);
+        button->setText(label);
+        button->setIconSize(QSize(16, 16));
+        button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+        button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        button->setFixedHeight(32);
+        button->setCheckable(true);
+        group->addButton(button);
+        connect(button, &QToolButton::toggled, button,
+                [button, refreshIcon](bool) {
+                    refreshIcon(button);
+                });
+        connect(button, &QToolButton::clicked, this,
+                [this, page]() { emit currentItemChanged(page); });
+        refreshIcon(button);
+        layout->addWidget(button);
+        return button;
+    };
 
-    setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::Preferred);
-    setMinimumWidth( ICON_HEIGHT * 6 + 10 );
-    setLayout( layout );
+    addSection(qtr("App"));
+    addCategory(qtr("General"), "sliders-horizontal", SettingsPageGeneral)->setChecked(true);
+    addCategory(qtr("Interface"), "mouse-pointer", SettingsPageInterface);
+    addCategory(qtr("Privacy"), "shield", SettingsPagePrivacy);
+    addCategory(qtr("Controls"), "keyboard", SettingsPageControls);
+
+    addSection(qtr("Media"));
+    addCategory(qtr("Playback"), "play", SettingsPagePlayback);
+    addCategory(qtr("Video"), "clapperboard", SettingsPageVideo);
+    addCategory(qtr("Audio"), "audio-lines", SettingsPageAudio);
+    addCategory(qtr("Subtitles"), "captions", SettingsPageSubtitles);
+    if (vlc_ml_instance_get(p_intf) != nullptr)
+        addCategory(qtr("Library"), "folder", SettingsPageLibrary);
+
+    addSection(qtr("System"));
+    addCategory(qtr("Network"), "radio-tower", SettingsPageNetwork);
+    addCategory(qtr("Performance"), "gauge", SettingsPagePerformance);
+    addCategory(qtr("Recording"), "circle-dot", SettingsPageRecording);
+    addCategory(qtr("Extensions"), "puzzle", SettingsPageExtensions);
+
+    if (p_intf->p_mi)
+        connect(p_intf->p_mi, &MainCtx::accentColorChanged, this,
+                [this, refreshIcon]() {
+            for (QToolButton *button : findChildren<QToolButton *>("settingsNavItem"))
+                refreshIcon(button);
+        });
+
+    layout->addStretch(1);
+    setObjectName("settingsSidebar");
+    setMinimumWidth(220);
+    setMaximumWidth(220);
 }
 
 void SPrefsCatList::switchPanel( int i )
@@ -605,6 +661,7 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             auto& ui = m_inputCodecUI;
             ui.setupUi( panel );
             panel_label->setText( qtr("Input & Codecs Settings") );
+            configBool( "playlist-cork", ui.pauseOnAudioCommunication );
 
             /* Disk Devices */
             {
@@ -700,6 +757,13 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             ui.setupUi( panel );
             panel_label->setText( qtr("Interface Settings") );
 
+            ui.modernImage->hide();
+            ui.modernButton->hide();
+            ui.classicImage->hide();
+            ui.classicButton->hide();
+            ui.colorSchemeLabel->hide();
+            ui.colorSchemeComboBox->hide();
+
 #ifndef _WIN32
             ui.langBox->hide();
 #else
@@ -777,28 +841,107 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
                      this, &SPrefsPanel::changeStyle );
 
             radioGroup = new QButtonGroup(this);
-            radioGroup->addButton( ui.modernButton, 0 );
-            radioGroup->addButton( ui.classicButton, 1 );
             radioGroup->addButton( ui.skins, 2 );
 
             configBool( "qt-minimal-view", ui.minimalviewBox );
 
-            /*Update layout radio buttons based on the checkState of the following checkboxes*/
-            connect(ui.menuBarCheck, &QtCheckboxChanged, this, &SPrefsPanel::updateLayoutSelection);
-            connect(ui.pinVideoControlsCheckbox, &QtCheckboxChanged, this, &SPrefsPanel::updateLayoutSelection);
-            connect(ui.titleBarCheckBox, &QtCheckboxChanged, this, &SPrefsPanel::updateLayoutSelection);
-
-            /*Clicking on image will check the corresponding layout radio button*/
             layoutImages = new QButtonGroup( this );
-            layoutImages->addButton( ui.modernImage, 0 );
-            layoutImages->addButton( ui.classicImage, 1 );
             layoutImages->addButton( ui.skinImage, 2 );
 
             connect( layoutImages, qOverload<QAbstractButton*>( &QButtonGroup::buttonClicked ), this, &SPrefsPanel::imageLayoutClick );
-
-            /* Set checkboxes depending on the layout selected*/
             connect(radioGroup, &QButtonGroup::idClicked, this, &SPrefsPanel::handleLayoutChange);
             connect(layoutImages, &QButtonGroup::idClicked, this, &SPrefsPanel::handleLayoutChange);
+
+            auto *themeAccentControls = new QWidget(panel);
+            themeAccentControls->setObjectName("settingsThemeAccentControls");
+            auto *themeAccentLayout = new QVBoxLayout(themeAccentControls);
+            themeAccentLayout->setContentsMargins(0, 2, 0, 10);
+            themeAccentLayout->setSpacing(7);
+
+            auto *themeLabel = new QLabel(qtr("Theme"), themeAccentControls);
+            themeLabel->setObjectName("settingsThemeSectionLabel");
+            themeAccentLayout->addWidget(themeLabel);
+
+            auto *themeSegments = new QWidget(themeAccentControls);
+            auto *themeSegmentsLayout = new QHBoxLayout(themeSegments);
+            themeSegmentsLayout->setContentsMargins(0, 0, 0, 0);
+            themeSegmentsLayout->setSpacing(0);
+            auto *themeGroup = new QButtonGroup(themeAccentControls);
+            themeGroup->setExclusive(true);
+
+            const QList<QPair<QString, ColorSchemeModel::ColorScheme>> themes = {
+                { qtr("Dark"), ColorSchemeModel::Night },
+                { qtr("Light"), ColorSchemeModel::Day },
+                { qtr("System"), ColorSchemeModel::System }
+            };
+            for (int i = 0; i < themes.size(); ++i)
+            {
+                auto *button = new QPushButton(themes[i].first, themeSegments);
+                button->setObjectName("settingsThemeSegment");
+                button->setProperty("segmentPosition",
+                                    i == 0 ? QStringLiteral("first")
+                                           : i == themes.size() - 1 ? QStringLiteral("last")
+                                                                    : QStringLiteral("middle"));
+                button->setCheckable(true);
+                button->setFixedWidth(94);
+                const int scheme = static_cast<int>(themes[i].second);
+                themeGroup->addButton(button, scheme);
+                themeSegmentsLayout->addWidget(button);
+                if (p_intf->p_mi->getColorScheme()->currentScheme() == themes[i].second)
+                    button->setChecked(true);
+            }
+            themeAccentLayout->addWidget(themeSegments);
+            connect(themeGroup, &QButtonGroup::idClicked,
+                    p_intf->p_mi->getColorScheme(), &ColorSchemeModel::setCurrentIndex);
+
+            auto *accentLabel = new QLabel(qtr("Accent color"), themeAccentControls);
+            accentLabel->setObjectName("settingsThemeSectionLabel");
+            themeAccentLayout->addWidget(accentLabel);
+
+            const QStringList accentColors = {
+                "#E87808", "#C0392B", "#A08A1E", "#1E8E3E", "#1690A0",
+                "#1E4FB4", "#7A3CC8", "#C0398A", "#8F8F8F"
+            };
+            auto *swatches = new QWidget(themeAccentControls);
+            auto *swatchesLayout = new QHBoxLayout(swatches);
+            swatchesLayout->setContentsMargins(0, 0, 0, 0);
+            swatchesLayout->setSpacing(7);
+            auto *accentGroup = new QButtonGroup(themeAccentControls);
+            accentGroup->setExclusive(true);
+            QList<QToolButton *> swatchButtons;
+            for (int i = 0; i < accentColors.size(); ++i)
+            {
+                auto *button = new QToolButton(swatches);
+                button->setObjectName("settingsAccentSwatch");
+                button->setAccessibleName(accentColors[i]);
+                button->setFixedSize(28, 28);
+                button->setCursor(Qt::PointingHandCursor);
+                button->setCheckable(true);
+                accentGroup->addButton(button, i);
+                swatchButtons.append(button);
+                swatchesLayout->addWidget(button);
+                if (p_intf->p_mi->accentColor().compare(accentColors[i], Qt::CaseInsensitive) == 0)
+                    button->setChecked(true);
+            }
+            auto updateSwatchStyles = [accentColors, swatchButtons]() {
+                for (int i = 0; i < swatchButtons.size(); ++i)
+                {
+                    const bool selected = swatchButtons[i]->isChecked();
+                    swatchButtons[i]->setStyleSheet(
+                        QStringLiteral("QToolButton { background-color: %1; border: %2px solid %3; border-radius: 4px; padding: 0; }")
+                            .arg(accentColors[i])
+                            .arg(selected ? 2 : 0)
+                            .arg(selected ? QStringLiteral("#ECECEC") : QStringLiteral("transparent")));
+                }
+            };
+            updateSwatchStyles();
+            connect(accentGroup, &QButtonGroup::idClicked, this,
+                    [this, accentColors, updateSwatchStyles](int index) {
+                p_intf->p_mi->setAccentColor(accentColors[index]);
+                updateSwatchStyles();
+            });
+            themeAccentLayout->addWidget(swatches);
+            ui.verticalLayout->insertWidget(1, themeAccentControls);
 
             configBool( "embedded-video", ui.embedVideo );
             configBool( "qt-video-autoresize", ui.resizingBox );
@@ -828,12 +971,6 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
             configBool( "qt-pin-controls", ui.pinVideoControlsCheckbox );
             m_resetters.push_back(std::make_unique<PropertyResetter>(ui.pinVideoControlsCheckbox, "checked"));
             QObject::connect( ui.pinVideoControlsCheckbox, &QtCheckboxChanged, p_intf->p_mi, &MainCtx::setPinVideoControls );
-
-            ui.colorSchemeComboBox->setModel( p_intf->p_mi->getColorScheme() );
-            ui.colorSchemeComboBox->setCurrentText( p_intf->p_mi->getColorScheme()->currentText() );
-            m_resetters.push_back(std::make_unique<PropertyResetter>( ui.colorSchemeComboBox, "currentIndex" ));
-            QObject::connect( ui.colorSchemeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged)
-                              , p_intf->p_mi->getColorScheme(), &ColorSchemeModel::setCurrentIndex );
 
             const double intfScaleFloatFactor = 100;
             const auto updateIntfUserScaleFactorFromControls =
@@ -1055,8 +1192,8 @@ SPrefsPanel::SPrefsPanel( qt_intf_t *_p_intf, QWidget *_parent,
         }
     }
 
-    panel_layout->addWidget( panel_label );
-    panel_layout->addWidget( title_line );
+    panel_label->hide();
+    title_line->hide();
 
     QScrollArea *scroller= new QScrollArea;
     scroller->setWidget( panel );
@@ -1116,6 +1253,16 @@ void SPrefsPanel::updateAudioOptions( int number )
 }
 
 
+QGroupBox *SPrefsPanel::takePrivacyGroup()
+{
+    QGroupBox *group = m_interfaceUI.groupBox_2;
+    if (group && group->parentWidget() && group->parentWidget()->layout())
+        group->parentWidget()->layout()->removeWidget(group);
+    if (group)
+        group->setParent(nullptr);
+    return group;
+}
+
 SPrefsPanel::~SPrefsPanel()
 {
     if (!m_isApplied)
@@ -1128,7 +1275,7 @@ SPrefsPanel::~SPrefsPanel()
 /* Checks the layout radio button corresponding the image clicked */
 void SPrefsPanel::imageLayoutClick( QAbstractButton* btn )
 {
-    QAbstractButton* layoutBtn = radioGroup->buttons().at( layoutImages->id( btn ) );
+    QAbstractButton* layoutBtn = radioGroup->button( layoutImages->id( btn ) );
     assert( layoutBtn );
     layoutBtn->setChecked( true );
 }
