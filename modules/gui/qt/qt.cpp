@@ -385,6 +385,7 @@ vlc_module_begin ()
               KEEPSIZE_LONGTEXT )
     add_bool( "qt-name-in-title", true, TITLE_TEXT,
               TITLE_LONGTEXT )
+    add_bool( "qt-tools-panel", false, "Show the tools panel on startup", nullptr )
     add_bool( "qt-fs-controller", true, QT_FULLSCREEN_TEXT,
               nullptr )
 

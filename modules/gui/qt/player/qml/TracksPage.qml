@@ -36,6 +36,8 @@ RowLayout {
 
     property int preferredWidth: VLCStyle.dp(512, VLCStyle.scale)
 
+    property bool showBackButton: true
+
     //FIXME make TrackMenuController a proper type (see TrackMenu)
     required property QtObject trackMenuController
 
@@ -55,7 +57,9 @@ RowLayout {
     }
 
     Item {
-        Layout.preferredWidth: VLCStyle.dp(72, VLCStyle.scale)
+        visible: root.showBackButton
+
+        Layout.preferredWidth: root.showBackButton ? VLCStyle.dp(72, VLCStyle.scale) : 0
         Layout.fillHeight: true
 
         Layout.topMargin: VLCStyle.margin_large
@@ -80,6 +84,8 @@ RowLayout {
     }
 
     Rectangle {
+        visible: root.showBackButton
+
         Layout.preferredWidth: VLCStyle.margin_xxxsmall
         Layout.fillHeight: true
 

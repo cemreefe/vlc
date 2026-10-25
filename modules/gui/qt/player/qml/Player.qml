@@ -161,6 +161,19 @@ FocusScope {
         }
     }
 
+    HoverHandler {
+        acceptedDevices: PointerDevice.Mouse
+
+        onPointChanged: {
+            if (!hovered)
+                return
+            if (Player.isInteractive)
+                interactiveAutoHideTimer.restart()
+            else
+                playerToolbarVisibilityFSM.mouseMove()
+        }
+    }
+
 
     Connections {
         target: MainCtx.playqueuePanel
@@ -959,7 +972,6 @@ FocusScope {
         pinControls: MainCtx.pinVideoControls
 
         showCSD: MainCtx.clientSideDecoration && (MainCtx.intfMainWindow.visibility !== Window.FullScreen)
-        showToolbar: MainCtx.hasToolbarMenu && (MainCtx.intfMainWindow.visibility !== Window.FullScreen)
         playlistVisible: playlistVisibility.isPlaylistVisible
 
         plListView: {
@@ -985,7 +997,9 @@ FocusScope {
         //initial state value is "", using a binding avoid animation on startup
         Binding on state {
             when: playerToolbarVisibilityFSM.started
-            value: (playerToolbarVisibilityFSM.isVisible || rootPlayer._controlsUnderVideo) ? "visible" : "hidden"
+            value: (playerToolbarVisibilityFSM.isVisible
+                    || rootPlayer._controlsUnderVideo
+                    || interactiveAutoHideTimer.running) ? "visible" : "hidden"
         }
 
         onTogglePlaylistVisibility: playlistVisibility.togglePlaylistVisibility()
@@ -1183,6 +1197,9 @@ FocusScope {
                 }
             }
         }
+
+
+
     }
 
     Dialogs {
@@ -1296,9 +1313,7 @@ FocusScope {
         leftPadding: VLCStyle.applicationHorizontalMargin
         bottomPadding: VLCStyle.applicationVerticalMargin + VLCStyle.margin_xsmall
 
-        textPosition: (MainCtx.pinVideoControls)
-                      ? ControlBar.TimeTextPosition.LeftRightSlider
-                      : ControlBar.TimeTextPosition.AboveSlider
+        textPosition: ControlBar.TimeTextPosition.LeftRightSlider
 
         // hide right text so that it won't overlap with play queue
         showRemainingTime: (textPosition !== ControlBar.TimeTextPosition.AboveSlider)
@@ -1323,7 +1338,9 @@ FocusScope {
         //initial state value is "", using a binding avoid animation on startup
         Binding on state {
             when: playerToolbarVisibilityFSM.started
-            value: (playerToolbarVisibilityFSM.isVisible || rootPlayer._controlsUnderVideo) ? "visible" : "hidden"
+            value: (playerToolbarVisibilityFSM.isVisible
+                    || rootPlayer._controlsUnderVideo
+                    || interactiveAutoHideTimer.running) ? "visible" : "hidden"
         }
 
         onRequestLockUnlockAutoHide: (lock) => rootPlayer.lockUnlockAutoHide(lock)

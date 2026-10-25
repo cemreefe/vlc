@@ -49,7 +49,6 @@ FocusScope{
     property string title
 
     property bool showCSD: false
-    property bool showToolbar: false
     property bool pinControls: false
 
     readonly property ColorContext colorContext: ColorContext {
@@ -59,9 +58,9 @@ FocusScope{
 
     // Private
 
-    property bool _showTopBar: (pinControls === false || showToolbar === false)
+    property bool _showTopBar: true
 
-    property bool _showCenterText: (pinControls && showToolbar === false && showCSD)
+    property bool _showCenterText: (_showTopBar && resumeVisible === false)
 
     readonly property int _sideMargin: VLCStyle.margin_small + sideMargin
 
@@ -92,7 +91,6 @@ FocusScope{
 
     onShowCSDChanged: _layout()
     onPinControlsChanged: _layout()
-    onShowToolbarChanged: _layout()
     onTopMarginChanged: _layout()
     onSideMarginChanged: _layout()
 
@@ -148,7 +146,9 @@ FocusScope{
 
             playlistGroup.height = lineHeight
             playlistGroup.anchors.topMargin = 0
-            playlistGroup.extraRightMargin = Qt.binding(function() { return width - csdDecorations.x })
+            playlistGroup.extraRightMargin = Qt.binding(function() {
+                return showCSD ? width - csdDecorations.x : 0
+            })
 
 
             implicitHeight = lineHeight
@@ -160,10 +160,6 @@ FocusScope{
             let left = undefined
             let right = undefined
             let logoPlaced = false
-
-            if (showToolbar) {
-                left = menubar
-            }
 
             if (showCSD) {
                 right = csdDecorations
@@ -219,21 +215,11 @@ FocusScope{
     }
 
     // Components -
-    Menus.Menubar {
+    Menus.QmlMenuBar {
         id: menubar
 
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.leftMargin: root.sideMargin
-        anchors.right: root.showCSD ? csdDecorations.left : parent.right
-
-
-        visible: root.showToolbar
-        enabled: root.showToolbar
-
-        onHoveredChanged: menu => root.requestLockUnlockAutoHide(hovered)
-        onMenuOpenedChanged: menu => root.requestLockUnlockAutoHide(menuOpened)
-        onImplicitHeightChanged: root._layout()
+        ctx: MainCtx
+        menubar: appMenuButton
     }
 
     Item {
@@ -270,38 +256,52 @@ FocusScope{
             visible: (root._showTopBar && root.resumeVisible === false)
 
             implicitHeight: VLCStyle.icon_banner + VLCStyle.margin_xxsmall * 2
-            implicitWidth: backBtn.implicitWidth + logo.implicitWidth + VLCStyle.margin_xxsmall
-
-            Widgets.IconToolButton {
-                id: backBtn
-
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-
-                objectName: "IconToolButton"
-                font.pixelSize: VLCStyle.icon_banner
-                text: VLCIcons.back
-                description: qsTr("Back")
-
-                AccessibleCompat.id: "topBarBackButton"
-
-                focus: true
-
-                Navigation.parentItem: root
-                Navigation.rightItem: menuSelector
-                onClicked: root.backRequested()
-
-                onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
-            }
+            implicitWidth: logo.implicitWidth + VLCStyle.margin_xsmall + appMenuButton.width
 
             Widgets.BannerCone {
                 id: logo
 
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.left: backBtn.right
-                anchors.leftMargin: VLCStyle.margin_xxsmall
+                anchors.left: parent.left
+
+                width: VLCStyle.icon_normal
+                height: VLCStyle.icon_normal
 
                 color: theme.accent
+            }
+
+            Widgets.IconToolButton {
+                id: appMenuButton
+
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.left: logo.right
+                anchors.leftMargin: VLCStyle.margin_xsmall
+
+                width: VLCStyle.bannerButton_width
+                height: VLCStyle.bannerButton_height
+                font.pixelSize: VLCStyle.icon_normal
+                text: VLCIcons.ellipsis
+                description: qsTr("Application menu")
+
+                AccessibleCompat.id: "topBarMenuButton"
+
+                Navigation.parentItem: root
+                Navigation.rightItem: playlistButton
+
+                onClicked: {
+                    root.requestLockUnlockAutoHide(true)
+                    menubar.popupAppMenu(appMenuButton)
+                }
+
+                onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
+
+                Connections {
+                    target: menubar
+
+                    function onMenuClosed() {
+                        root.requestLockUnlockAutoHide(false)
+                    }
+                }
             }
         }
 
@@ -322,7 +322,7 @@ FocusScope{
 
             onHidden: {
                 if (activeFocus) {
-                    backBtn.forceActiveFocus()
+                    appMenuButton.forceActiveFocus()
                 }
             }
 
@@ -352,7 +352,7 @@ FocusScope{
         leftPadding: VLCStyle.margin_small
         rightPadding: VLCStyle.margin_small
 
-        text: root.title
+        text: Player.title || Player.name
         color: theme.fg.primary
         font.pixelSize: VLCStyle.dp(13, VLCStyle.scale)
         font.weight: Font.DemiBold
@@ -383,7 +383,7 @@ FocusScope{
 
         width: root.textWidth - VLCStyle.margin_normal
 
-        visible: !root.pinControls
+        visible: false
 
         enabled: visible
 
@@ -434,51 +434,6 @@ FocusScope{
 
         visible: root._showTopBar
 
-        Widgets.IconToolButton {
-            id: menuSelector
-
-            anchors.verticalCenter: parent.verticalCenter
-            visible: !root.showToolbar
-            enabled: visible
-            focus: visible
-            font.pixelSize: VLCStyle.icon_banner
-
-            width: VLCStyle.bannerButton_width
-            height: VLCStyle.bannerButton_height
-
-            text: VLCIcons.more
-            description: qsTr("Menu")
-
-            AccessibleCompat.id: "topBarMenuButton"
-
-            checked: contextMenu.shown
-
-            Navigation.parentItem: root
-            Navigation.leftItem: backBtn
-            Navigation.rightItem: playlistButton
-
-            onClicked: contextMenu.popup(this.mapToGlobal(0, height))
-
-            onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
-
-            Menus.QmlGlobalMenu {
-                id: contextMenu
-
-                ctx: MainCtx
-
-                onAboutToShow: root.requestLockUnlockAutoHide(true)
-                onAboutToHide: root.requestLockUnlockAutoHide(false)
-            }
-
-            Connections {
-                target: root
-
-                function onForceUnlock() {
-                    contextMenu.close()
-                }
-            }
-        }
-
         PlaylistPane.PlaylistToggleButton {
             id: playlistButton
 
@@ -490,7 +445,7 @@ FocusScope{
 
             AccessibleCompat.id: "topBarPlayqueueButton"
 
-            focus: root.showToolbar
+            focus: false
 
             width: VLCStyle.bannerButton_width
             height: VLCStyle.bannerButton_height
@@ -498,7 +453,7 @@ FocusScope{
             plListView: root.plListView
             
             Navigation.parentItem: root
-            Navigation.leftItem: menuSelector.visible ? menuSelector : backBtn
+            Navigation.leftItem: appMenuButton
 
             onClicked: togglePlaylistVisibility()
 

@@ -290,6 +290,8 @@ libqt_plugin_la_SOURCES = \
 	player/delay_estimator.cpp \
 	player/delay_estimator.hpp \
 	player/player_controller.cpp player/player_controller.hpp player/player_controller_p.hpp \
+	player/subtitle_style_settings.cpp \
+	player/subtitle_style_settings.hpp \
 	player/player_controlbar_model.cpp player/player_controlbar_model.hpp \
 	player/control_list_model.cpp player/control_list_model.hpp \
 	player/control_list_filter.cpp \
@@ -490,6 +492,7 @@ nodist_libqt_plugin_la_SOURCES = \
 	style/systempalette.moc.cpp \
 	style/vlcicons.moc.cpp \
 	player/delay_estimator.moc.cpp \
+	player/subtitle_style_settings.moc.cpp \
 	player/input_models.moc.cpp \
 	player/player_controller.moc.cpp \
 	player/player_controlbar_model.moc.cpp \
@@ -1179,6 +1182,7 @@ libqml_module_player_a_QML = \
 	player/qml/ResumeDialog.qml \
 	player/qml/SliderBar.qml \
 	player/qml/TopBar.qml \
+	player/qml/ToolsPanel.qml \
 	player/qml/TracksMenu.qml \
 	player/qml/TracksPage.qml \
 	player/qml/TracksPageAudio.qml \

@@ -450,6 +450,7 @@ void MainCtx::loadPrefs(const bool callSignals)
     loadFromVLCOption(m_maxVolume, "qt-max-volume", &MainCtx::maxVolumeChanged);
 
     loadFromVLCOption(m_pinVideoControls, "qt-pin-controls", &MainCtx::pinVideoControlsChanged);
+    loadFromVLCOption(m_toolsPanelVisible, "qt-tools-panel", &MainCtx::toolsPanelVisibleChanged);
 
     loadFromVLCOption(m_pinOpacity, "qt-fs-opacity", &MainCtx::pinOpacityChanged);
 
@@ -634,6 +635,14 @@ void MainCtx::setAccentColor(const QString& accentColor)
 
     config_PutPsz("qt-accent-color", qtu(accentColor));
     emit accentColorChanged();
+}
+
+void MainCtx::setToolsPanelVisible(bool visible)
+{
+    if (m_toolsPanelVisible == visible)
+        return;
+    m_toolsPanelVisible = visible;
+    emit toolsPanelVisibleChanged();
 }
 
 void MainCtx::setPinVideoControls(bool pinVideoControls)

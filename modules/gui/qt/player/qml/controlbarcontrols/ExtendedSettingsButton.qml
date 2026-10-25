@@ -22,15 +22,16 @@ import VLC.Widgets as Widgets
 import VLC.Style
 import VLC.Dialogs
 import VLC.Util
+import VLC.MainInterface
 
 Widgets.IconToolButton {
     id: extdSettingsBtn
 
     text: VLCIcons.effect_filter
 
-    description: qsTr("Extended settings")
+    description: qsTr("Tools panel")
 
     AccessibleCompat.id: "extendedSettingsButton"
 
-    onClicked: DialogsProvider.extendedDialog()
+    onClicked: MainCtx.toolsPanelVisible = !MainCtx.toolsPanelVisible
 }
